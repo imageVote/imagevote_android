@@ -1,4 +1,4 @@
-package at.clicktovote;
+package at.imagevote;
 
 import android.content.ComponentName;
 import android.content.ContentResolver;
@@ -17,6 +17,7 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import android.content.*;
+import at.wouldyourather.*;
 
 public class Share {
 
@@ -219,7 +220,8 @@ public class Share {
         sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
 
         //text
-        sendIntent.putExtra(Intent.EXTRA_TEXT, "click-to-vote.at/" + key);
+        String packageName = ctx.getResources().getString(R.string.package_name);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, packageName + "/" + key);
 
         return sendIntent;
     }

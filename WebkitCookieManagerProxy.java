@@ -1,4 +1,4 @@
-package at.clicktovote;
+package at.imagevote;
 
 import java.io.IOException;
 import java.net.CookieManager;

@@ -1,4 +1,4 @@
-package at.clicktovote;
+package at.imagevote;
 
 import android.app.*;
 import android.app.usage.*;
@@ -9,6 +9,8 @@ import android.provider.Settings.*;
 import android.util.*;
 import android.webkit.*;
 import java.util.*;
+
+import at.wouldyourather.R;
 
 public class ShareIntent extends Activity {
 
@@ -64,7 +66,8 @@ public class ShareIntent extends Activity {
         }
 
         //not transform all toLowerCase() because "key Id"
-        if (!url.toLowerCase().contains("click-to-vote")) {
+        String packageName = ctx.getResources().getString(R.string.package_name);
+        if (!url.toLowerCase().contains(packageName)) {
             Log.i(logName, "error: WRONG INTENT URL? " + url);
             return;
         }

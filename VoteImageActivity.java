@@ -1,4 +1,4 @@
-package at.clicktovote;
+package at.imagevote;
 
 import android.app.*;
 import android.content.*;
@@ -11,15 +11,25 @@ import android.provider.Settings.*;
 import android.util.*;
 import android.webkit.*;
 import android.widget.*;
-import at.clicktovote.*;
-import com.digits.sdk.android.*;
-import com.twitter.sdk.android.core.*;
+import at.wouldyourather.*;
+
+import com.digits.sdk.android.Digits;
+import com.digits.sdk.android.DigitsSession;
+import com.digits.sdk.android.DigitsOAuthSigning;
+import com.digits.sdk.android.DigitsException;
+import com.digits.sdk.android.AuthCallback;
+
+import com.twitter.sdk.android.core.TwitterCore;
+import com.twitter.sdk.android.core.TwitterAuthConfig;
+import com.twitter.sdk.android.core.TwitterAuthToken;
+
 import io.fabric.sdk.android.*;
 import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.util.*;
 import org.apache.http.*;
+import org.apache.http.client.*;
 import org.apache.http.client.entity.*;
 import org.apache.http.client.methods.*;
 import org.apache.http.conn.*;
@@ -59,8 +69,8 @@ public class VoteImageActivity extends Activity {
 
     private final String assetsUrl = "file:///android_asset/";
     private final String indexUrl = assetsUrl + "index.html";
-    private String appPath = "click-to-vote.at";
-    private String keysPath = "http://keys." + appPath + "/";
+    private String appPath = "";
+    private String keysPath = "";
     private final String alternativePath = "http://dl.dropboxusercontent.com/u/70345137/key/";
 
     public final int PICK_IMAGE = 1;
@@ -75,6 +85,9 @@ public class VoteImageActivity extends Activity {
         custom.loadUrl(assetsUrl + "loading.html");
         custom.setBackgroundColor(customBackgroundColor);
         setContentView(custom);
+
+        appPath = getResources().getString(R.string.url);
+        keysPath = "http://keys." + appPath + "/";
 
         String url = getIntent().getDataString();
         Log.i(logName, "on create data = " + url);
@@ -209,6 +222,8 @@ public class VoteImageActivity extends Activity {
             webView.addJavascriptInterface(new WebAppInterface(), "Device");
         }
 
+        String packageName = getResources().getString(R.string.package_name);
+
         //PREMIUM
         boolean wasPremium = prefs.getBoolean("isPremium", false);
         premium = isPremium();
@@ -217,11 +232,11 @@ public class VoteImageActivity extends Activity {
                 prefs.edit().putBoolean("isPremium", true).commit();
 
                 getPackageManager().setComponentEnabledSetting(
-                        new ComponentName("at.clicktovote", "at.clicktovote.FreeActivity"),
+                        new ComponentName(packageName, packageName + ".FreeActivity"),
                         PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
 
                 getPackageManager().setComponentEnabledSetting(
-                        new ComponentName("at.clicktovote", "at.clicktovote.PremiumActivity"),
+                        new ComponentName(packageName, packageName + ".PremiumActivity"),
                         PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
             }
 
@@ -229,11 +244,11 @@ public class VoteImageActivity extends Activity {
             prefs.edit().putBoolean("isPremium", false).commit();
 
             getPackageManager().setComponentEnabledSetting(
-                    new ComponentName("at.clicktovote", "at.clicktovote.PremiumActivity"),
+                    new ComponentName(packageName, packageName + ".PremiumActivity"),
                     PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
 
             getPackageManager().setComponentEnabledSetting(
-                    new ComponentName("at.clicktovote", "at.clicktovote.FreeActivity"),
+                    new ComponentName(packageName, packageName + ".FreeActivity"),
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
         }
 
@@ -420,7 +435,8 @@ public class VoteImageActivity extends Activity {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    String urlString = "http://click-to-vote.at/error.php";
+                    String appPath = getResources().getString(R.string.url);
+                    String urlString = "http://" + appPath + "/error.php";
                     HttpPost httppost = new HttpPost(urlString);
 
                     ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
@@ -428,7 +444,7 @@ public class VoteImageActivity extends Activity {
 
                     try {
                         httppost.setEntity(new UrlEncodedFormEntity(params));
-                        DefaultHttpClient client = new DefaultHttpClient();
+                        HttpClient client = new DefaultHttpClient();
                         client.execute(httppost);
 
                     } catch (Exception e) {
@@ -501,7 +517,8 @@ public class VoteImageActivity extends Activity {
                     public void run() {
                         Log.i(logName, "run Runnable digitsAuth()");
                         try {
-                            URL url = new URL("http://click-to-vote.at/verify.php?nocache=" + (new Date()).getTime());
+                            String appPath = getResources().getString(R.string.url);
+                            URL url = new URL("http://" + appPath + "/verify.php?nocache=" + (new Date()).getTime());
 
                             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                             connection.setRequestMethod("GET");
@@ -770,7 +787,7 @@ public class VoteImageActivity extends Activity {
         }
 
         //not transform all toLowerCase() because "key Id"
-        if (!url.toLowerCase().contains("click-to-vote")) {
+        if (!url.toLowerCase().contains(appPath)) {
             Log.i(logName, "error: WRONG INTENT URL? " + url);
             return;
         }
@@ -964,8 +981,8 @@ public class VoteImageActivity extends Activity {
     }
 
     // BACKGROUND CONNECTION WORKS
-    final public DefaultHttpClient httpclient = new DefaultHttpClient();
-    final public HttpPost httppost = new HttpPost("http://click-to-vote.at/update.php");
+    final public HttpClient httpclient = new DefaultHttpClient();
+    //final public HttpPost httppost = new HttpPost("http://click-to-vote.at/update.php");
 
     private class GetData extends AsyncTask<String, Void, String> {
 
@@ -1096,6 +1113,8 @@ public class VoteImageActivity extends Activity {
             params.add(new BasicNameValuePair("id", id));
 
             try {
+                String url_core = getResources().getString(R.string.url_core);
+                HttpPost httppost = new HttpPost("http://" + url_core + "/update.php");
                 httppost.setEntity(new UrlEncodedFormEntity(params));
                 HttpResponse response = httpclient.execute(httppost);
                 Log.i(logName, "HTTP Entiry: " + convertStreamToString(httppost.getEntity().getContent()));
@@ -1200,6 +1219,9 @@ public class VoteImageActivity extends Activity {
             params.add(new BasicNameValuePair("id", userId));
 
             try {
+                String url_core = getResources().getString(R.string.url_core);
+                HttpPost httppost = new HttpPost("http://" + url_core + "/update.php");
+
                 httppost.setEntity(new UrlEncodedFormEntity(params));
                 HttpResponse response = httpclient.execute(httppost);
                 Log.i(logName, "HTTP Entiry: " + convertStreamToString(httppost.getEntity().getContent()));
@@ -1378,7 +1400,8 @@ public class VoteImageActivity extends Activity {
     }
 
     private boolean isPremium() {
-        if (getPackageManager().checkSignatures(ctx.getPackageName(), "at.clicktovote.pro") == PackageManager.SIGNATURE_MATCH) {
+        String packageName = getResources().getString(R.string.package_name);
+        if (getPackageManager().checkSignatures(ctx.getPackageName(), packageName + ".pro") == PackageManager.SIGNATURE_MATCH) {
             Log.i(logName, "PREMIUM IS INSTALLED");
             //updateGame("$('#log').text('OH YEAH!')");
             return true;
