@@ -750,6 +750,8 @@ public class VoteImageActivity extends Activity {
         isActivityRestarting = false;
         isPublicActivation = false;
         isSharing = false;
+
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
     }
 
     private boolean needPermission = false;
@@ -1068,7 +1070,7 @@ public class VoteImageActivity extends Activity {
             Log.i(logName, "FILE DATA = " + data);
 
             if (null == data) {
-                JSerror(getResources().getString(R.string.connectionFailed));
+                JSerror(getResources().getString(R.string.connectionFailed) + " in " + keysPath + "/" + keyId);
                 Log.i(logName, "error on key: " + keyId);
                 return;
 

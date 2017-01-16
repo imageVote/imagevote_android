@@ -154,7 +154,7 @@ public class Share {
         }
 
         //SAVE NEW SHARE IMAGE AND CONTENT-RESOLVER MediaStore
-        String path = Environment.getExternalStorageDirectory() + "/" + name;
+        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + name;
         File file = new File(path);
 
         if (base64ImageData == null) {
@@ -171,7 +171,7 @@ public class Share {
             fos.close();
 
             imgSaved = android.provider.MediaStore.Images.Media.insertImage(
-                    ctx.getContentResolver(), path, name, name);
+                    ctx.getContentResolver(), path, name, null);
 
         } catch (Exception e) {
             Log.e(logName, "base64ImageData = " + base64ImageData, e);
@@ -181,6 +181,7 @@ public class Share {
     //only can order adding first
     private boolean isSocialApp(String packageName, String name, int value) {
         //TODO: add and test more social apps
+        Log.i(logName, packageName);
 
         return (packageName.contains("twitter") && !name.contains("DM")
                 && (0 == value || -1 == value)) //twitter
@@ -192,7 +193,7 @@ public class Share {
                 && (2 == value || -1 == value)) //google+
                 //
                 || (packageName.contains("whatsapp")
-                && (3 == value || -1 == value)) //whattsapp
+                && (3 == value || -1 == value)) //whatsapp
                 //
                 || (packageName.contains("telegram")
                 && (4 == value || -1 == value)) //telegram
@@ -220,8 +221,8 @@ public class Share {
         sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
 
         //text
-        String packageName = ctx.getResources().getString(R.string.package_name);
-        sendIntent.putExtra(Intent.EXTRA_TEXT, packageName + "/" + key);
+        String url = ctx.getResources().getString(R.string.url);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, url + "/" + key);
 
         return sendIntent;
     }
