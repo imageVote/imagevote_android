@@ -1037,7 +1037,7 @@ public class VoteImageActivity extends Activity {
                 if (200 != code) {
                     String app_url = getResources().getString(R.string.url);
                     if (path.contains("//" + app_url)) {
-                        JSerror(getResources().getString(R.string.keyNotFound) + " (1)");
+                        JSerror(getResources().getString(R.string.keyNotFound));
                         if (false == isNetworkAvailable()) {
                             JSerror(getResources().getString(R.string.connectionFailed));
                         }
