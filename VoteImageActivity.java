@@ -69,9 +69,9 @@ public class VoteImageActivity extends Activity {
 
     private final String assetsUrl = "file:///android_asset/";
     private final String indexUrl = assetsUrl + "index.html";
-    private String appPath = "";
     private String keysPath = "";
-    private final String alternativePath = "http://dl.dropboxusercontent.com/u/70345137/key/";
+    //other key servers?
+    private final String alternativePath = null;
 
     public final int PICK_IMAGE = 1;
     public final int MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS = 2;
@@ -86,8 +86,7 @@ public class VoteImageActivity extends Activity {
         custom.setBackgroundColor(customBackgroundColor);
         setContentView(custom);
 
-        appPath = getResources().getString(R.string.url);
-        keysPath = "http://keys." + appPath + "/";
+        keysPath = "http://" + getResources().getString(R.string.url_keys) + "/";
 
         String url = getIntent().getDataString();
         Log.i(logName, "on create data = " + url);
@@ -109,7 +108,7 @@ public class VoteImageActivity extends Activity {
         utils = new Utils(ctx);
         logName = VoteImageActivity.class.getName();
 
-        prefs = ctx.getSharedPreferences("clicktovote", Activity.MODE_PRIVATE);
+        prefs = ctx.getSharedPreferences(getResources().getString(R.string.url), Activity.MODE_PRIVATE);
 
         firstTime = prefs.getBoolean("firstTime", true);
         prefs.edit().putBoolean("firstTime", false).commit();
@@ -295,9 +294,7 @@ public class VoteImageActivity extends Activity {
 
         @JavascriptInterface
         public String isTranslucent() {
-            String res = translucent;
-            //translucent = "";
-            return res;
+            return translucent;
         }
 
         @JavascriptInterface
@@ -789,6 +786,7 @@ public class VoteImageActivity extends Activity {
         }
 
         //not transform all toLowerCase() because "key Id"
+        String appPath = getResources().getString(R.string.url);
         if (!url.toLowerCase().contains(appPath)) {
             Log.i(logName, "error: WRONG INTENT URL? " + url);
             return;
@@ -976,7 +974,7 @@ public class VoteImageActivity extends Activity {
             Log.i(logName, "!loadingFinished");
             code.add(run);
         } else {
-            Log.i(logName, "INJECTION = " + text);
+            Log.i(logName, "INJECTING = " + text);
             loadWebviewUrl(run);
 //            loadWebviewJS(run);
         }
@@ -1001,6 +999,7 @@ public class VoteImageActivity extends Activity {
 
         private String keyId;
         private String key;
+        private String url;
 
         @Override
         protected String doInBackground(String... urls) {
@@ -1008,7 +1007,6 @@ public class VoteImageActivity extends Activity {
 
             //path
             String path = keysPath;
-            String url;
             if ('-' != keyId.charAt(0)) {
                 //public
                 key = keyId;
@@ -1020,7 +1018,7 @@ public class VoteImageActivity extends Activity {
                     countryUrl = "~" + arr[0] + "/";
                 }
 
-                url = path + "get.php?url=public/" + countryUrl + "/" + key + "&";
+                url = path + "core/get.php?url=public/" + countryUrl + "/" + key + "&";
 
             } else {
                 path += "private/";
@@ -1037,8 +1035,12 @@ public class VoteImageActivity extends Activity {
                 //fail?
                 int code = response.getStatusLine().getStatusCode();
                 if (200 != code) {
-                    if (path.contains("//sml.town")) {
-                        return "_error when request: " + path + ", with key: '" + key + "'. Check your internet connection.";
+                    String app_url = getResources().getString(R.string.url);
+                    if (path.contains("//" + app_url)) {
+                        JSerror(getResources().getString(R.string.keyNotFound) + " (1)");
+                        if (false == isNetworkAvailable()) {
+                            JSerror(getResources().getString(R.string.connectionFailed));
+                        }
                     }
                     return null;
                 }
@@ -1059,6 +1061,7 @@ public class VoteImageActivity extends Activity {
 
             } catch (Exception e) {
                 Log.e(logName, "error", e);
+                JSerror(getResources().getString(R.string.wrongJsonPoll));
                 return null;
             }
 
@@ -1067,17 +1070,19 @@ public class VoteImageActivity extends Activity {
 
         @Override
         protected void onPostExecute(String data) {
+            Log.i(logName, "url = " + url);
             Log.i(logName, "FILE DATA = " + data);
 
             if (null == data) {
-                JSerror(getResources().getString(R.string.connectionFailed) + " in " + keysPath + "/" + keyId);
+                translucent = "false";
                 Log.i(logName, "error on key: " + keyId);
                 return;
 
             } else if (data.charAt(0) == '_') {
+                translucent = "false";
 
                 //try alternative path
-                if (!keysPath.equals(alternativePath)) {
+                if (null != alternativePath && !keysPath.equals(alternativePath)) {
                     keysPath = alternativePath;
                     new GetData().execute(keyId);
                     //warn
