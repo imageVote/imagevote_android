@@ -1,5 +1,7 @@
 package at.imagevote;
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -9,8 +11,10 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.util.Log;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -23,23 +27,40 @@ public class Share {
 
     public String logName = this.getClass().getName();
     private Context ctx;
+    private VoteImageActivity activity;
+    private String sharingImg;
+    private String sharingKey;
 
     public Share(Context context) {
         ctx = context;
+        activity = (VoteImageActivity) ctx;
+    }
+
+    public void shareImageJS() {
+        shareImageJS(sharingImg, sharingKey);
     }
 
     public void shareImageJS(String img, String key) {
         Log.i(logName, "key = " + key + " on shareImageJS()");
 
         //remove old files first
-        for (File file : Environment.getExternalStorageDirectory().listFiles()) {
-            if (file.isFile() && file.getName().startsWith("clicktovote_")) {
-                file.delete();
+        File[] list = Environment.getExternalStorageDirectory().listFiles();
+        if (null != list) {
+            for (File file : list) {
+                if (file.isFile() && file.getName().startsWith("clicktovote_")) {
+                    file.delete();
+                }
             }
         }
 
         if (null != img && !"".equals(img)) {
             String filename = "clicktovote_" + key + ".jpeg";
+            if (false == requestReadExternalStoragePermissions()) {
+                activity.sharing = this;
+                this.sharingImg = img;
+                this.sharingKey = key;
+                return;
+            }
             saveImage(img, filename);
         }
 
@@ -132,6 +153,25 @@ public class Share {
         } catch (android.content.ActivityNotFoundException ex) {
             Log.i(logName, "ERROR");
         }
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private boolean requestReadExternalStoragePermissions() {
+        if (activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+
+            if (!activity.shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                // "Never ask again" case
+                String txt = ctx.getResources().getString(R.string.readExternalStorageResponse);
+                activity.webView.js("modalBox('" + txt + "', '', function(){Device.permissionsRedirection()} )");
+
+            } else {
+                activity.requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        activity.PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+            }
+
+            return false;
+        }
+        return true;
     }
 
     private static String imgSaved;

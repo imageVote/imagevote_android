@@ -1,13 +1,9 @@
 package at.imagevote;
 
 import android.app.*;
-import android.app.usage.*;
 import android.content.*;
-import android.content.pm.*;
 import android.os.*;
-import android.provider.Settings.*;
 import android.util.*;
-import android.webkit.*;
 import java.util.*;
 
 import at.wouldyourather.R;
@@ -17,12 +13,6 @@ public class ShareIntent extends Activity {
     //android
     private static Context ctx;
     private static String logName;
-    public SharedPreferences prefs;
-
-    public boolean loadingFinished = false;
-    public List<String> code = new ArrayList<String>();
-
-    public String callback = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
