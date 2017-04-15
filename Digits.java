@@ -161,8 +161,11 @@ public class Digits {
             return;
         }
 
-        Requests requests = new Requests(ctx);
-        requests.new SaveData().execute(pollData.action, pollData.token, pollData.key, pollData.data, pollData.isPublic, pollData.country, pollData.callback);
+        Requests requests = new Requests(ctx);       
+
+        //requests.new SaveData().execute(pollData.action, pollData.token, pollData.key, pollData.data, pollData.isPublic, pollData.country, pollData.callback);
+        requests.saveDATA(pollData.action, pollData.data, pollData.token, pollData.key, pollData.isPublic, pollData.country, pollData.callback);
+
         activity.webView.webviewInterface.pollData = null;
     }
 

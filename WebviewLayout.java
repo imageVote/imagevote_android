@@ -5,11 +5,14 @@ import android.graphics.Bitmap;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.View;
 import android.webkit.*;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,11 +22,7 @@ import at.wouldyourather.R;
 public class WebviewLayout extends WebView {
 
     private String logName = this.getClass().getName();
-    public int customBackgroundColor = 0x11FFFFFF;
     public int webviewBackgroundColor = 0x11FFFFFF;
-
-    private final String assetsUrl = "file:///android_asset/";
-    public final String indexUrl = assetsUrl + "index.html";
 
     private Context ctx;
     private VoteImageActivity activity;
@@ -50,10 +49,11 @@ public class WebviewLayout extends WebView {
     }
 
     public void start(Context context) {
-
         ctx = context;
         activity = (VoteImageActivity) ctx;
+    }
 
+    public void load() {
         //right white margin 2.3
         this.setBackgroundColor(webviewBackgroundColor);
 
@@ -67,8 +67,7 @@ public class WebviewLayout extends WebView {
         }
 
         // Add javascript interface only if it's not broken
-        this.setWebViewClient(
-                new WebViewClient() {
+        this.setWebViewClient(new WebViewClient() {
 
             //not use 'shouldOverride..', called more times than 'onPageFinished'
             @Override
@@ -99,6 +98,8 @@ public class WebviewLayout extends WebView {
                 if (javascriptInterfaceBroken) {
                     view.loadUrl(webviewInterface.handleGingerbreadStupidity);
                 }
+                activity.users.jsAddUser();
+
                 //EXTRAS
                 if (activity.premium) {
                     js("$('#premium').remove(); $('body').append($('<div id=\"premium\">').load('~premium/premium.html'))");
@@ -106,10 +107,8 @@ public class WebviewLayout extends WebView {
 
                 runStoredCode(view);
                 Log.i(logName, "url loaded: " + url);
-
             }
-        }
-        );
+        });
 
         if (!javascriptInterfaceBroken) {
             webviewInterface = new WebviewInterface(activity);
@@ -129,75 +128,33 @@ public class WebviewLayout extends WebView {
         webSettings.setAllowFileAccess(true);
 
         loadLocalStorage();
-        activity.users.jsAddUser();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            setWebContentsDebuggingEnabled(true);
+        }
     }
 
-    public void startWebview(String url) {
-        Log.i(logName, "url = " + url);
-        if (null == url) {
-            return;
-        }
-
-        //not transform all toLowerCase() because "key Id"
-        String appPath = getResources().getString(R.string.url);
-        if (!url.toLowerCase().contains(appPath)) {
-            Log.i(logName, "error: WRONG INTENT URL? " + url);
-            return;
-        }
-
-        if (url.contains("/share")) {
-            String[] data = url.split("/share_");
-            String[] extra = new String[0];
-            if (data.length > 1) {
-                extra = data[1].split("/")[0].split("_");
-            }
-            activity.setContentView(activity.custom);
-
-            String[] arrUrl = url.split("/");
-            String keyId = arrUrl[arrUrl.length - 1];
-
-            //override
-            //timeout to let image create
-            String js_callback = "var data = Device.getKeyData('" + keyId + "');"
-                    + "var arr = JSON.parse(data + ']');"
-                    + "var obj = toObject(arr);";
-            for (int i = 0; i < extra.length; i++) {
-                js_callback += "obj.options[" + i + "] = " + extra[i] + ";";
-            }
-            js_callback += "var canvas = document.createElement('canvas');"
-                    + "canvas.id = 'shareCanvas';"
-                    + "canvas.display = 'none';"
-                    + "$('body').append(canvas);"
-                    + "getCanvasImage('#shareCanvas', obj, '" + keyId + "', 0, true, function(imgData){"
-                    + "Device.share(imgData, '" + keyId + "');"
-                    + "Device.close();"
-                    + "});";
-
-            activity.requests.new GetData(js_callback).execute(keyId);
-            return;
-        }
-
-        String[] parts = url.split("//");
-        String[] array = parts[parts.length - 1].split("/");
-
+    public void startWebview(String[] arrUrl, String url_request, String params) {
         //if not pathname '/'
-        if (array.length < 2) {
+        if (arrUrl.length < 2) {
             js("$('html').removeClass('translucent'); defaultPage()");
             return;
         }
 
+        String keyId = arrUrl[arrUrl.length - 1];
+
         //key
-        String keyId = array[array.length - 1];
-        lastUrl = indexUrl + "?" + keyId; //this will load next
+        lastUrl = activity.indexUrl + "?" + keyId; //this will load next
         Log.i(logName, "webView.lastUrl = " + lastUrl);
 
         if (!"".equals(keyId)) {
             //prevent when not resume not loading screen
-            js("loading();");
+            js("loading()");
             activity.translucent = "true";
             activity.loading = true;
 
-            activity.requests.new GetData().execute(keyId);
+            //activity.requests.new GetData().execute(keyId);
+            activity.requests.new SimpleRequest().execute(url_request, params, null, null);
             return;
         }
 
@@ -233,7 +190,7 @@ public class WebviewLayout extends WebView {
             }
         });
     }
-    
+
     //Layout.java
     public void runStoredCode(WebView view) {
         Log.i(logName, "runStoredCode()");
@@ -266,6 +223,18 @@ public class WebviewLayout extends WebView {
 
     public void saveLocalStorage() {
         js("Device.saveLocalStorage(JSON.stringify(localStorage))");
+    }
+
+    public void visible() {
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (getVisibility() == View.GONE) {
+                    js("$('html').addClass('translucent')");
+                }
+                setVisibility(View.VISIBLE);
+            }
+        });
     }
 
 }

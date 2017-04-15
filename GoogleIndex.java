@@ -1,6 +1,5 @@
 package at.imagevote;
 
-import android.app.Activity;
 import android.content.Context;
 import android.net.Uri;
 
@@ -9,52 +8,42 @@ import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;
 import com.google.android.gms.common.api.GoogleApiClient;
 
-/* TODO: USE GOOGLE INDEXATION FOR SEARCH POLLS!!! */
+//https://firebase.google.com/docs/app-indexing/android/activity?hl=es-419
 public class GoogleIndex {
 
-    Activity activity;
+    private Context ctx;
+    private GoogleApiClient mClient;
+    private Uri mUrl;
+    private String mTitle;
+    private String mDescription;
 
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    public GoogleApiClient client;
+    public GoogleIndex(Context context){
+        ctx = context;
 
-    public GoogleIndex(Context ctx){
-        activity = (Activity) ctx;
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(ctx).addApi(AppIndex.API).build();
+        mClient = new GoogleApiClient.Builder(ctx).addApi(AppIndex.API).build();
+        mUrl = Uri.parse("http://examplepetstore.com/dogs/standard-poodle");
+        mTitle = "Standard Poodle";
+        mDescription = "The Standard Poodle stands at least 18 inches at the withers";
     }
 
-    public void start(){
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client.connect();
-        AppIndex.AppIndexApi.start(client, getIndexApiAction());
-    }
-
-    public void stop(){
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        AppIndex.AppIndexApi.end(client, getIndexApiAction());
-        client.disconnect();
-    }
-
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    public Action getIndexApiAction() {
+    public Action getAction() {
         Thing object = new Thing.Builder()
-                .setName("VoteImage Page") // TODO: Define a title for the content shown.
-                // TODO: Make sure this auto-generated URL is correct.
-                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
+                .setName(mTitle)
+                .setDescription(mDescription)
+                .setUrl(mUrl)
                 .build();
+
         return new Action.Builder(Action.TYPE_VIEW)
                 .setObject(object)
                 .setActionStatus(Action.STATUS_TYPE_COMPLETED)
                 .build();
     }
 
+    public void start(){
+        mClient.connect();
+        AppIndex.AppIndexApi.start(mClient, getAction());
+    }
+    public void stop(){
+        mClient.disconnect();
+    }
 }

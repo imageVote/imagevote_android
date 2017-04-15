@@ -8,13 +8,13 @@ import android.graphics.*;
 import android.net.*;
 import android.os.*;
 import android.provider.*;
-import android.support.annotation.NonNull;
 import android.util.*;
+import android.view.View;
 import android.webkit.*;
+
 import at.wouldyourather.*;
 
 import java.io.*;
-import java.util.*;
 
 public class VoteImageActivity extends Activity {
 
@@ -28,11 +28,15 @@ public class VoteImageActivity extends Activity {
     public boolean loading = false;
     public boolean isPublicActivation = false;
     public boolean isSharing = false;
-    public String translucent = null;
+    public String translucent = "";
     public String callback = null;
 
-    public WebviewLayout webView;
-    public WebView custom;
+    public WebviewLayout webView = null;
+    public WebView custom = null;
+    public int customBackgroundColor = 0x11FFFFFF;
+    private final String assetsUrl = "file:///android_asset/";
+    public final String indexUrl = assetsUrl + "index.html";
+
     public MessageLayout edText;
 
     public final int PICK_IMAGE = 1;
@@ -44,21 +48,16 @@ public class VoteImageActivity extends Activity {
     public Requests requests;
     public Digits digits;
     public Users users;
-    private GoogleIndex googleIndex;
+    public ParseRequests parseRequests;
+    public GoogleIndex googleIndex;
+    public Interstitial interstitial;
 
-    public HashMap<String, String> dataKeys = new HashMap<>();
-
+    //public HashMap<String, String> dataKeys = new HashMap<>();
     public Share sharing;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        //start transparent loading
-        custom = new WebView(this);
-        custom.setBackgroundColor(0x00FFFFFF);
-//        custom.loadUrl("file:///android_asset/~commons/loading.html");        
-//        setContentView(custom);
 
         String url = getIntent().getDataString();
         Log.i(logName, "on create data = " + url);
@@ -71,17 +70,23 @@ public class VoteImageActivity extends Activity {
         requests = new Requests(ctx);
         digits = new Digits(ctx);
         users = new Users(ctx);
+        parseRequests = new ParseRequests(ctx);
         googleIndex = new GoogleIndex(ctx);
 
         //setContentView after start() -> let show translucent mode
-        if (null == url || (!url.contains("/share_") && !url.contains("/share/"))) {
-            Log.i(logName, "setContentView(R.layout.main);");
-            setContentView(R.layout.main);
+        Log.i(logName, "setContentView(R.layout.main); " + url);
+        setContentView(R.layout.main);
 
-            webView = (WebviewLayout) findViewById(R.id.webview);
-            webView.start(ctx);
-            edText = (MessageLayout) findViewById(R.id.send_message);
+        boolean shareRun = null != url && url.contains("/share");
+        webView = (WebviewLayout) findViewById(R.id.webview);
+        if (shareRun) {
+            Log.i(logName, "shareRun -> webView.setVisibility(View.GONE);");
+            webView.setVisibility(View.GONE);
         }
+        webView.start(ctx);
+        webView.load();
+
+        edText = (MessageLayout) findViewById(R.id.send_message);
 
         String packageName = getResources().getString(R.string.package_name);
 
@@ -113,10 +118,87 @@ public class VoteImageActivity extends Activity {
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
         }
 
-        if (null != url) {
-            //webView.lastUrl = url; //dont get web url!
-            webView.startWebview(url);
+        interstitial = new Interstitial(ctx);
+
+        Log.i(logName, "url = " + url);
+        if (null == url) {
+            return;
         }
+
+        ///////////////////////////////////////////////////////////////////////
+        start(url);
+    }
+
+    private void start(String url) {
+        //path
+        String[] arrUrl = url.split("/");
+        String keyId = arrUrl[arrUrl.length - 1];
+        Log.i(logName, "keyId: " + keyId + " from " + url);
+
+        String url_request = "";
+        String params = "";
+        String path = "http://" + ctx.getResources().getString(R.string.url_keys) + "/";
+        if ('-' != keyId.charAt(0)) {
+            //public
+            String key = keyId;
+            String countryUrl = "";
+            if (keyId.indexOf('-') > 0) {
+                String[] arr = keyId.split("-");
+                key = arr[1];
+                countryUrl = "~" + arr[0] + "/";
+            }
+            url_request = path + "core/get.php";
+            params = "url=public/" + countryUrl + "/" + key;
+        } else {
+            path += "private/";
+            url_request = path + keyId;
+        }
+
+        //only share apps screen:
+        if (url.contains("/share")) {
+            String[] data = url.split("/share_");
+            if (data.length < 2) {
+                data = url.split("#_");
+            }
+            String[] extra = new String[0];
+            if (data.length > 1) {
+                extra = data[1].split("/")[0].split("_");
+            }
+            
+            String[] share_url_arr = url.split("://");
+            String share_url = share_url_arr[share_url_arr.length -1].split("/")[0];
+            Log.i(logName, "share_url: " + share_url);
+
+            String js_callback = "screenPoll.key = '" + keyId + "'; var shareDevice = new RequestPollByKeyCallback";
+            String defineVotes = "";
+            for (int i = 0; i < extra.length; i++) {
+                defineVotes += "shareDevice.poll.obj.options[" + i + "][2] = " + extra[i] + "; ";
+            }
+            String js_post_callback = "function(){"
+                    + defineVotes
+                    + "var canvas = document.createElement('canvas'); "
+                    + "canvas.id = 'shareCanvas'; "
+                    + "canvas.display = 'none'; "
+                    + "$('body').append(canvas); "
+                    + "console.log('getCanvasImage: ' + screenPoll.key + ' : ' + JSON.stringify(shareDevice.poll.obj));"
+                    + "getCanvasImage('#shareCanvas', shareDevice.poll.obj, screenPoll.key, 0, '', function(imgData){"
+                    + "  var done = votationEvents_deviceShare(imgData, screenPoll.key, '" + share_url + "'); "
+                    + "  if(false !== done){"
+                    + "    Device.close('JAVA js_post_callback'); "
+                    + "  }"
+                    + "});"
+                    + "}";
+            Log.i(logName, "js_post_callback:" + js_post_callback);
+
+            //activity.requests.new GetData(js_callback).execute(keyId);
+            requests.new SimpleRequest().execute(url_request, params, js_callback, js_post_callback);
+            return;
+        }
+
+        //webView.lastUrl = url; //dont get web url!
+//        if (standarApp) {
+        webView.startWebview(arrUrl, url_request, params);
+//        }
     }
 
     @Override
@@ -127,9 +209,15 @@ public class VoteImageActivity extends Activity {
 
     @Override
     public void onStop() {
-        super.onStop();
         webView.saveLocalStorage();
         googleIndex.stop();
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        interstitial.onDestroy();
+        super.onDestroy();
     }
 
     @Override
@@ -141,12 +229,16 @@ public class VoteImageActivity extends Activity {
     @Override
     protected void onPause() {
         Log.i(logName, "onPause");
-        custom.setBackgroundColor(0xFF000000);
+        //custom.setBackgroundColor(0xFF000000);
         //webView.setBackgroundColor(0xFF000000);
 
         super.onPause();
         if (connectivityChangeReceiver != null) {
-            unregisterReceiver(connectivityChangeReceiver);
+            try {
+                unregisterReceiver(connectivityChangeReceiver);
+            } catch (IllegalArgumentException e) {
+                Log.i(logName, "cant unregister receiver cose not exists");
+            }
         }
         //will
         isActivityRestarting = true;
@@ -155,15 +247,26 @@ public class VoteImageActivity extends Activity {
     @Override
     public void onResume() {
         Log.i(logName, "activity onResume()");
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
         super.onResume();
 
-        custom.setBackgroundColor(webView.customBackgroundColor);
-        //webView.setBackgroundColor(webView.webviewBackgroundColor);
-
+//        String url = getIntent().getDataString();
+//        if (null != url && url.contains("/share")) {
+//            Log.i(logName, "shareRun -> webView.setVisibility(View.GONE);");
+//            webView.loadWebviewUrl(webView.lastUrl);
+//            webView.setVisibility(View.GONE);
+//            return;
+//        }
         //connected to network detection
         IntentFilter intentFilter = new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE");
         registerReceiver(connectivityChangeReceiver, intentFilter);
         //webView.setNetworkAvailable(isNetworkAvailable());
+
+        if (null != custom) {
+            custom.setBackgroundColor(customBackgroundColor);
+            return;
+        }
+        //webView.setBackgroundColor(webView.webviewBackgroundColor);
 
 //        boolean firstTime = prefs.getBoolean("firstTime", true);
         boolean firstTime = prefs.getBoolean("firstTime", false);
@@ -192,7 +295,7 @@ public class VoteImageActivity extends Activity {
             //open existing votations            
             if ("".equals(webView.lastUrl)) {
                 Log.i(logName, "#loading");
-                webView.loadWebviewUrl(webView.indexUrl + "#loading");
+                webView.loadWebviewUrl(indexUrl + "#loading");
             } else {
                 Log.i(logName, "loading lastUrl: " + webView.lastUrl);
                 webView.loadWebviewUrl(webView.lastUrl);
@@ -201,12 +304,12 @@ public class VoteImageActivity extends Activity {
         } else if (!isActivityRestarting && !isSharing && !isPublicActivation) {
             //open new votations
             Log.i(logName, "!isActivityRestarting");
-            webView.loadWebviewUrl(webView.indexUrl);
+            webView.loadWebviewUrl(indexUrl);
 
         } else {
             Log.i(logName, "resume()");
             //go back or return to votation
-            webView.js("resume()");
+            webView.js("hashManager.resume()");
         }
         //else nothing
 
@@ -214,12 +317,11 @@ public class VoteImageActivity extends Activity {
         isActivityRestarting = false;
         isPublicActivation = false;
         isSharing = false;
-
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
     }
 
     @Override
-    public void onNewIntent(Intent intent) {
+    public void onNewIntent(Intent intent
+    ) {
         Log.i(logName, "ON NEW INTENT");
         super.onNewIntent(intent);
         //prevents bug?
@@ -228,12 +330,13 @@ public class VoteImageActivity extends Activity {
         //if not data, can be default not in app intent 
         String data = intent.getDataString();
         if (null != data) {
-            webView.startWebview(data);
+            start(data);
         }
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data
+    ) {
         super.onActivityResult(requestCode, resultCode, data);
 
         switch (requestCode) {
@@ -277,6 +380,7 @@ public class VoteImageActivity extends Activity {
                     startLastSocialApp();
                 }
                 //finish anyway ?
+                Log.i(logName, "finish in MY_PERMISSIONS_REQUEST_PACKAGE_USAGE_STATS");
                 finish();
                 break;
         }
@@ -289,6 +393,7 @@ public class VoteImageActivity extends Activity {
         Log.i(logName, "logUrl: " + webUrl);
 
         if (null != translucent) {
+            Log.i(logName, "finish in onBackPressed");
             finish();
 
         } else if (!webUrl.contains("#") && webView.canGoBack()) { //like if was '/~vote' url
@@ -303,7 +408,8 @@ public class VoteImageActivity extends Activity {
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(Configuration newConfig
+    ) {
         super.onConfigurationChanged(newConfig);
         // Checks whether a hardware keyboard is available
         if (newConfig.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO) {
@@ -314,7 +420,7 @@ public class VoteImageActivity extends Activity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: {
@@ -329,8 +435,8 @@ public class VoteImageActivity extends Activity {
             }
         }
     }
-
     // FUNCTIONS: //////////////////////////////////////////////////////////////////////////////////
+
     public boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager = (ConnectivityManager) ctx.getSystemService(Context.CONNECTIVITY_SERVICE);
         try {
@@ -345,7 +451,12 @@ public class VoteImageActivity extends Activity {
     private BroadcastReceiver connectivityChangeReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
             boolean online = isNetworkAvailable();
-            webView.setNetworkAvailable(online);
+            if (null != webView) {
+                webView.setNetworkAvailable(online);
+            }
+            if (null != custom) {
+                custom.setNetworkAvailable(online);
+            }
             Log.i(logName, "isNetworkAvailable() " + Boolean.toString(online));
         }
     };
@@ -381,7 +492,6 @@ public class VoteImageActivity extends Activity {
 //        return queryUsageStats.isEmpty();
         return !utils.hasUsageStatsPermission();
     }
-
 }
 
 class PollData {

@@ -14,13 +14,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.provider.Settings;
 import android.util.Log;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import android.content.*;
+import android.view.View;
 import at.wouldyourather.*;
 
 public class Share {
@@ -28,38 +28,56 @@ public class Share {
     public String logName = this.getClass().getName();
     private Context ctx;
     private VoteImageActivity activity;
-    private String sharingImg;
-    private String sharingKey;
+    private String sharingImg = null;
+    private String sharingKey = null;
+    private String sharingUrl = "";
+    private boolean fromIntent = false;
 
     public Share(Context context) {
         ctx = context;
         activity = (VoteImageActivity) ctx;
     }
 
-    public void shareImageJS() {
-        shareImageJS(sharingImg, sharingKey);
+    //from Intent case constructor (not cast main activity)
+    public Share(Context context, String notFromMainContext) {
+        ctx = context;
+        fromIntent = true;
     }
 
-    public void shareImageJS(String img, String key) {
-        Log.i(logName, "key = " + key + " on shareImageJS()");
+    public boolean shareImageJS() {
+        if (null == sharingImg || null == sharingKey) {
+            Log.i(logName, "ERROR: STORED SHARING DATA LOST!?");
+            return false;
+        }
+        return shareImageJS(sharingImg, sharingKey, sharingUrl);
+    }
+
+    public boolean shareImageJS(String img, String key, String url_path) {
+        Log.i(logName, "url = " + url_path + " + " + key + " on shareImageJS()");
+        String url;
+        if (!url_path.isEmpty()) {
+            url = url_path + key;
+        } else {
+            url = ctx.getResources().getString(R.string.url) + "/" + key;
+        }
 
         //remove old files first
-        File[] list = Environment.getExternalStorageDirectory().listFiles();
+        File[] list = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).listFiles();
         if (null != list) {
             for (File file : list) {
-                if (file.isFile() && file.getName().startsWith("clicktovote_")) {
+                if (file.isFile() && file.getName().startsWith("imagevote_")) {
                     file.delete();
                 }
             }
         }
 
-        if (null != img && !"".equals(img)) {
-            String filename = "clicktovote_" + key + ".jpeg";
+        if (null != img && !"".equals(img) && !fromIntent) {
+            String filename = "imagevote_" + key + ".jpeg";
             if (false == requestReadExternalStoragePermissions()) {
                 activity.sharing = this;
                 this.sharingImg = img;
-                this.sharingKey = key;
-                return;
+                this.sharingUrl = url;
+                return false;
             }
             saveImage(img, filename);
         }
@@ -70,7 +88,7 @@ public class Share {
 
         //add 'more' option
         Intent intent = new Intent(ctx, MoreShareOptions.class);
-        intent.putExtra("key", key);
+        intent.putExtra("key", url);
         intent.setFlags(Intent.FLAG_ACTIVITY_PREVIOUS_IS_TOP);
 
         //get list
@@ -88,6 +106,7 @@ public class Share {
         Log.i(logName, "createChooser..");
         List<LabeledIntent> intentList = new ArrayList<LabeledIntent>();
 
+        Log.i(logName, "intent image path: " + imgSaved);
         //order by 'n' importance value
         for (int n = 0; n < 5; n++) {
 
@@ -106,7 +125,7 @@ public class Share {
                 if (isSocial) {
                     Log.i(logName, packageName + " added");
                     Intent addIntent = new Intent();
-                    addIntent = updateIntent(addIntent, key);
+                    addIntent = updateIntent(addIntent, url);
                     addIntent.setComponent(new ComponentName(packageName, ri.activityInfo.name));
                     LabeledIntent labeled = new LabeledIntent(addIntent, packageName, ri.loadLabel(pm), ri.icon);
                     intentList.add(labeled);
@@ -124,7 +143,7 @@ public class Share {
                 //if redirection app
                 if (packageName.equals(lastTask)) {
                     Intent addIntent = new Intent();
-                    addIntent = updateIntent(addIntent, key);
+                    addIntent = updateIntent(addIntent, url);
                     addIntent.setComponent(new ComponentName(packageName, ri.activityInfo.name));
                     LabeledIntent labeled = new LabeledIntent(addIntent, packageName, ri.loadLabel(pm), ri.icon);
                     //add first
@@ -153,21 +172,31 @@ public class Share {
         } catch (android.content.ActivityNotFoundException ex) {
             Log.i(logName, "ERROR");
         }
+
+        return true;
     }
 
     @TargetApi(Build.VERSION_CODES.M)
     private boolean requestReadExternalStoragePermissions() {
         if (activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 
-            if (!activity.shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            if (activity.shouldShowRequestPermissionRationale(Manifest.permission.READ_EXTERNAL_STORAGE)) {
                 // "Never ask again" case
                 String txt = ctx.getResources().getString(R.string.readExternalStorageResponse);
-                activity.webView.js("modalBox('" + txt + "', '', function(){Device.permissionsRedirection()} )");
+                String sub = ctx.getResources().getString(R.string.readExternalStorageResponse2);
+                activity.webView.js("modalBox('" + txt + "', '" + sub + "', function(){"
+                        + "  Device.permissionsRedirection(); "
+                        + "  Device.close('modalBox accept');"
+                        + "}, function(){"
+                        + "  Device.close('modalBox cancel');"
+                        + "})");
+                activity.webView.visible();
 
-            } else {
-                activity.requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                        activity.PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
             }
+//            else {
+            activity.requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    activity.PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+//            }
 
             return false;
         }
@@ -184,7 +213,7 @@ public class Share {
         Uri queryUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         String[] projection = {MediaStore.Images.Media._ID};
         String selection = MediaStore.Images.Media.DESCRIPTION + " LIKE ?";
-        String[] selectionArgs = new String[]{"clicktovote_%"};
+        String[] selectionArgs = new String[]{"imagevote_%"};
 
         Cursor c = contentResolver.query(queryUri, projection, selection, selectionArgs, null);
         while (c.moveToNext()) {
@@ -201,7 +230,8 @@ public class Share {
             Log.i(logName, "base64ImageData == null");
             return;
         }
-        String data = base64ImageData.replace("data:image/png;base64,", "");
+//        String data = base64ImageData.replace("data:image/png;base64,", "");
+        String data = base64ImageData;
 
         try {
             byte[] decodedString = android.util.Base64.decode(data, 0);
@@ -214,14 +244,14 @@ public class Share {
                     ctx.getContentResolver(), path, name, null);
 
         } catch (Exception e) {
-            Log.e(logName, "base64ImageData = " + base64ImageData, e);
+            Log.e(logName, "ERROR IN base64ImageData = " + base64ImageData, e);
         }
     }
 
     //only can order adding first
     private boolean isSocialApp(String packageName, String name, int value) {
         //TODO: add and test more social apps
-        Log.i(logName, packageName);
+        //Log.i(logName, packageName);
 
         return (packageName.contains("twitter") && !name.contains("DM")
                 && (0 == value || -1 == value)) //twitter
@@ -242,7 +272,7 @@ public class Share {
                 && (5 == value || -1 == value)); //hangouts
     }
 
-    public Intent updateIntent(Intent sendIntent, String key) {
+    public Intent updateIntent(Intent sendIntent, String url) {
         sendIntent.setAction(Intent.ACTION_SEND);
 
         //image
@@ -261,8 +291,9 @@ public class Share {
         sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
 
         //text
-        String url = ctx.getResources().getString(R.string.url);
-        sendIntent.putExtra(Intent.EXTRA_TEXT, url + "/" + key);
+//        String url = ctx.getResources().getString(R.string.url);
+//        sendIntent.putExtra(Intent.EXTRA_TEXT, url + "/" + key);
+        sendIntent.putExtra(Intent.EXTRA_TEXT, url);
 
         return sendIntent;
     }

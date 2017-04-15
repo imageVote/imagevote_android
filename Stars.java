@@ -21,6 +21,7 @@ public class Stars {
     private final String TAG = this.getClass().getName();
 
     private Context ctx;
+    private String logName = this.getClass().getName();
     private MessageLayout edText;
     private String appName = "";
     //private String supportEmail = "info@email.com";
@@ -30,10 +31,11 @@ public class Stars {
         edText = editText;
         appName = ctx.getResources().getString(R.string.free_name);
 
-        //start();
+        start();
     }
 
     public void start(){
+        Log.i(logName, "Stars.start()");
         //4 DEBUG:
         this.clear();
 

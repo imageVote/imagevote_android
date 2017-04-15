@@ -42,17 +42,13 @@ public class WebviewInterface {
     }
 
     @JavascriptInterface
-    public void loadKeyData(String keyId) {
-        Log.i(logName, "Key id = " + keyId);
-        requests.new GetData().execute(keyId);
-    }
-
-    @JavascriptInterface
-    public void newKey(String token) {
+    public void newKey() {
         //get new key
         String[] profile = activity.users.getUserProfile();
-        //token for know is same call
-        requests.new GetNewKey().execute(profile[0], token);
+
+        String url = "/update.php";
+        String params = "action=newkey&id=" + profile[0];
+        requests.new SimpleRequest().execute(url, params, "loadKey", null);
     }
 
     @JavascriptInterface
@@ -62,6 +58,7 @@ public class WebviewInterface {
             // finish() on startActivityForResult
         } else {
             activity.startLastSocialApp();
+            Log.i(logName, "finish in firstTimeOk");
             activity.finish();
         }
     }
@@ -89,7 +86,7 @@ public class WebviewInterface {
         Log.i(logName, "SAVE. key: " + key + ", publicKey: " + isPublic + ", action: " + action);
 
         pollData = new PollData(action, token, key, data, isPublic, country, callback);
-        if (null != isPublic && !"".equals(isPublic) && !"false".equals(isPublic)) { //if is public
+        if ("true" == isPublic || "1" == isPublic) { //if is public
             String digitsKey = activity.prefs.getString("digitsKey", null);
             Log.i(logName, "stored digitsKey: " + digitsKey);
 
@@ -102,23 +99,21 @@ public class WebviewInterface {
             }
         }
 
-        requests.new SaveData().execute(action, token, key, data, isPublic, country, callback);
+        //requests.new SaveData().execute(action, token, key, data, isPublic, country, callback);
+        requests.saveDATA(action, data, token, key, isPublic, country, callback);
     }
 
     @JavascriptInterface
-    public void share(String img, String key) {
+    public boolean share(String img, String key, String url) {
         if ("".equals(img)) {
             Log.i(logName, "EMPTY SHARED IMG");
-            return;
+            return false;
         }
-        Log.i(logName, "key = " + key + " on share()");
+        Log.i(logName, "url = " + url + " + " + key + " on share()");
         activity.isSharing = true;
 
         Share shareClass = new Share(ctx);
-        shareClass.shareImageJS(img, key);
-
-        //trying remove after all shareImage done
-        activity.webView.js("$('.absoluteLoading').remove(); sharingPoll = false;");
+        return shareClass.shareImageJS(img, key, url);
     }
 
     @JavascriptInterface
@@ -161,13 +156,6 @@ public class WebviewInterface {
     }
 
     @JavascriptInterface
-    public String getKeyData(String keyId) {
-        String data = activity.dataKeys.get(keyId);
-        Log.i(logName, "data: " + data);
-        return data;
-    }
-
-    @JavascriptInterface
     public void error(final String text) {
         new Thread(new Runnable() {
             @Override
@@ -180,7 +168,7 @@ public class WebviewInterface {
                 String params = "";
                 params += "error=" + text;
 
-                requests.getPostData(urlString, params);
+                requests.postRequest(urlString, params);
             }
         }).start();
     }
@@ -191,7 +179,8 @@ public class WebviewInterface {
     }
 
     @JavascriptInterface
-    public void close() {
+    public void close(String why) {
+        Log.i(logName, "finish in close() JavascriptInterface: " + why);
         activity.finish();
     }
 
@@ -202,8 +191,8 @@ public class WebviewInterface {
     }
 
     @JavascriptInterface
-    public void simpleRequest(String url, String callback) {
-        requests.new SimpleRequest().execute(url, callback);
+    public void simpleRequest(String url, String params, String callback) {
+        requests.new SimpleRequest().execute(url, params, callback, null);
     }
 
     @JavascriptInterface
@@ -228,12 +217,27 @@ public class WebviewInterface {
         activity.startActivityForResult(intent, activity.PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE_MANUAL);
     }
 
+    @JavascriptInterface
+    public void loadAd() {
+        activity.interstitial.loadInterstitialAd();
+    }
+
+    @JavascriptInterface
+    public void parseSelect(String table, String lastId, String id, String callback) {
+        activity.parseRequests.new select().execute(table, lastId, id, callback);
+    }
+
+    @JavascriptInterface
+    public void parseUpdate(String table, String id, String add, String sub, String idQ, String callback) {
+        activity.parseRequests.new update().execute(table, id, add, sub, idQ, callback);
+    }
+
     //
     public String handleGingerbreadStupidity = "javascript:;"
             + "var _ = '[Device]';"
             + "function handler() {"
-            + "this.loadKey = function(url) {"
-            + "    window.location = 'http://Device:loadKey:' + url;"
+            + "this.isTranslucent = function() {"
+            + "    window.location = 'http://Device:isTranslucent';"
             + "};"
             + "this.newKey = function() {"
             + "    window.location = 'http://Device:newKey';"
@@ -256,9 +260,6 @@ public class WebviewInterface {
             + "this.pickIconImage = function() {"
             + "    window.location = 'http://Device:pickIconImage';"
             + "};"
-            + "this.getKeyData = function(key) {"
-            + "    window.location = 'http://Device:getKeyData:' + key;"
-            + "};"
             + "this.error = function(text) {"
             + "    window.location = 'http://Device:error:' + text;"
             + "};"
@@ -266,19 +267,28 @@ public class WebviewInterface {
             + "    window.location = 'http://Device:log:' + text;"
             + "};"
             + "this.close = function() {"
-            + "    window.location = 'http://Device:close';"
+            + "    window.location = 'http://Device:close' + why;"
             + "};"
             + "this.showStars = function() {"
             + "    window.location = 'http://Device:showStars';"
             + "};"
             + "this.simpleRequest = function() {"
-            + "    window.location = 'http://Device:simpleRequest:' + encodeURIComponent(url + _ + callback);"
+            + "    window.location = 'http://Device:simpleRequest:' + encodeURIComponent(url + _ + params + _ + callback);"
             + "};"
             + "this.saveLocalStorage = function() {"
             + "    window.location = 'http://Device:saveLocalStorage:' + json;"
             + "};"
             + "this.permissionsRedirection = function() {"
             + "    window.location = 'http://Device:permissionsRedirection';"
+            + "};"
+            + "this.loadAd = function() {"
+            + "    window.location = 'http://Device:loadAd';"
+            + "};"
+            + "this.parseSelect = function() {"
+            + "    window.location = 'http://Device:parseSelect:' + encodeURIComponent(table + _ + lastId + _ + id + _ + callback);"
+            + "};"
+            + "this.parseUpdate = function() {"
+            + "    window.location = 'http://Device:parseUpdate:' + encodeURIComponent(table + _ + id + _ + add + _ + sub + _ + idQ + _ + callback);"
             + "};"
             + "}"
             + "var Device = new handler();";

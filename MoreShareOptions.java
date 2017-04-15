@@ -21,11 +21,12 @@ public class MoreShareOptions extends Activity {
         Log.i(logName, "MoreShareOptions key: " + key);
 
         Intent sharingIntent = new Intent(Intent.ACTION_SEND);
-        Share share = new Share(ctx);
+        Share share = new Share(ctx, "from intent");
         sharingIntent = share.updateIntent(sharingIntent, key); //static updateIntent (imgSaved)
         startActivity(Intent.createChooser(sharingIntent, "Share via:"));
 
         //kill this activity
+        Log.i(logName, "finish in MoreShareOptions");
         finish();
     }
 
