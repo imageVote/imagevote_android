@@ -80,10 +80,12 @@ public class Requests {
         private String params;
         private String callback = "";
         private String post_callback = "";
+        public String nextLine = "";
 
         SimpleRequest() {
             //nothing
         }
+
         SimpleRequest(WebviewLayout view) {
             webView = view;
         }
@@ -107,7 +109,7 @@ public class Requests {
             Log.i(logName, "SimpleRequest on: " + url);
 
             try {
-                return postRequest(url, params);
+                return postRequest(url, params, nextLine);
             } catch (Exception e) {
                 Log.e(logName, "error", e);
             }
@@ -135,6 +137,10 @@ public class Requests {
     }
 
     public String postRequest(String url_string, String params) {
+        return postRequest(url_string, params, "");
+    }
+
+    public String postRequest(String url_string, String params, String nextLine) {
         String result = "postRequest java error on: " + url_string + " with: " + params;
 
         try {
@@ -159,7 +165,7 @@ public class Requests {
             }
 
             InputStream is = new BufferedInputStream(urlConnection.getInputStream());
-            result = convertStreamToString(is);
+            result = convertStreamToString(is, nextLine);
             urlConnection.disconnect();
 
         } catch (Exception e) {
@@ -170,13 +176,20 @@ public class Requests {
         return result;
     }
 
-    private String convertStreamToString(InputStream is) throws Exception {
+    private String convertStreamToString(InputStream is, String nextLine) throws Exception {
         //ISO-8859-1 shows good accents, ñ, etc..
         BufferedReader reader = new BufferedReader(new InputStreamReader(is, "ISO-8859-1"));
         StringBuilder sb = new StringBuilder();
+
         String line = null;
+        boolean first = true;
         while ((line = reader.readLine()) != null) {
-            sb.append(line + "\\n");
+            if (first) {
+                sb.append(line);
+                first = false;
+            } else {
+                sb.append(nextLine + line);
+            }
         }
         is.close();
         return sb.toString();

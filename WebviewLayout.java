@@ -144,7 +144,7 @@ public class WebviewLayout extends WebView {
         String keyId = arrUrl[arrUrl.length - 1];
 
         //key
-        lastUrl = activity.indexUrl + "?" + keyId; //this will load next
+        lastUrl = activity.indexUrl + "?" + keyId; //this is needed to load in assets index.html
         Log.i(logName, "webView.lastUrl = " + lastUrl);
 
         if (!"".equals(keyId)) {
@@ -153,8 +153,17 @@ public class WebviewLayout extends WebView {
             activity.translucent = "true";
             activity.loading = true;
 
-            //activity.requests.new GetData().execute(keyId);
-            activity.requests.new SimpleRequest().execute(url_request, params, null, null);
+//            String[] key_arr = keyId.split("_");
+//            if (key_arr.length == 2) {
+////                TODO: ver como prevenir esto de manera elegante
+////                String table = "preguntas" + key_arr[0];
+////                String key = key_arr[1];
+////                activity.parseRequests.new select().execute(table, null, key, "new RequestPollByKeyCallback");
+//            } else {
+                //activity.requests.new GetData().execute(keyId);
+                activity.requests.new SimpleRequest().execute(url_request, params, null, null);
+//            }
+
             return;
         }
 

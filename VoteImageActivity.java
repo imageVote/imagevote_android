@@ -164,9 +164,9 @@ public class VoteImageActivity extends Activity {
             if (data.length > 1) {
                 extra = data[1].split("/")[0].split("_");
             }
-            
+
             String[] share_url_arr = url.split("://");
-            String share_url = share_url_arr[share_url_arr.length -1].split("/")[0];
+            String share_url = share_url_arr[share_url_arr.length - 1].split("/")[0];
             Log.i(logName, "share_url: " + share_url);
 
             String js_callback = "screenPoll.key = '" + keyId + "'; var shareDevice = new RequestPollByKeyCallback";
@@ -192,6 +192,7 @@ public class VoteImageActivity extends Activity {
 
             //activity.requests.new GetData(js_callback).execute(keyId);
             requests.new SimpleRequest().execute(url_request, params, js_callback, js_post_callback);
+
             return;
         }
 

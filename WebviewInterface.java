@@ -189,10 +189,18 @@ public class WebviewInterface {
         new Stars(ctx, activity.edText);
         activity.webView.js("localStorage.setItem('stars_done', true)");
     }
-
+    
     @JavascriptInterface
     public void simpleRequest(String url, String params, String callback) {
-        requests.new SimpleRequest().execute(url, params, callback, null);
+        simpleRequest(url, params, callback, "");
+    }
+
+    @JavascriptInterface
+    public void simpleRequest(String url, String params, String callback, String nextLine) {
+        Log.i(logName, "simpleRequest " + url + " " + params + " " + callback);
+        Requests.SimpleRequest simpleRequest = requests.new SimpleRequest();
+        simpleRequest.nextLine = nextLine;
+        simpleRequest.execute(url, params, callback, null);
     }
 
     @JavascriptInterface
@@ -266,16 +274,16 @@ public class WebviewInterface {
             + "this.log = function(text) {"
             + "    window.location = 'http://Device:log:' + text;"
             + "};"
-            + "this.close = function() {"
+            + "this.close = function(why) {"
             + "    window.location = 'http://Device:close' + why;"
             + "};"
             + "this.showStars = function() {"
             + "    window.location = 'http://Device:showStars';"
             + "};"
-            + "this.simpleRequest = function() {"
-            + "    window.location = 'http://Device:simpleRequest:' + encodeURIComponent(url + _ + params + _ + callback);"
+            + "this.simpleRequest = function(url, params, callback, nextLine) {"
+            + "    window.location = 'http://Device:simpleRequest:' + encodeURIComponent(url + _ + params + _ + callback + _ + nextLine);"
             + "};"
-            + "this.saveLocalStorage = function() {"
+            + "this.saveLocalStorage = function(json) {"
             + "    window.location = 'http://Device:saveLocalStorage:' + json;"
             + "};"
             + "this.permissionsRedirection = function() {"
@@ -284,10 +292,10 @@ public class WebviewInterface {
             + "this.loadAd = function() {"
             + "    window.location = 'http://Device:loadAd';"
             + "};"
-            + "this.parseSelect = function() {"
+            + "this.parseSelect = function(table, lastId, id, callback) {"
             + "    window.location = 'http://Device:parseSelect:' + encodeURIComponent(table + _ + lastId + _ + id + _ + callback);"
             + "};"
-            + "this.parseUpdate = function() {"
+            + "this.parseUpdate = function(table, id, add, sub, idQ, callback) {"
             + "    window.location = 'http://Device:parseUpdate:' + encodeURIComponent(table + _ + id + _ + add + _ + sub + _ + idQ + _ + callback);"
             + "};"
             + "}"
