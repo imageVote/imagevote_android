@@ -18,11 +18,11 @@ public class Interstitial {
 
         // FACEBOOK: //
         com.facebook.ads.AdSettings.addTestDevice("59a6986df3fd266d667054b7965927ef"); //my Android:
-        String facebook_app_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id);
+        String facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id);
         if (random >= 1) {
-            facebook_app_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id2);
+            facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id2);
         }
-        interstitialAd_facebook = new com.facebook.ads.InterstitialAd(ctx, facebook_app_id);
+        interstitialAd_facebook = new com.facebook.ads.InterstitialAd(ctx, facebook_placement_id);
         interstitialAd_facebook.setAdListener(new com.facebook.ads.InterstitialAdListener() {
 
             @Override
