@@ -22,7 +22,7 @@ public class Interstitial {
         if (random > 0.01) {
             facebook_app_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id2);
         }
-        interstitialAd_facebook = new com.facebook.ads.InterstitialAd(ctx, facebook_app_id);
+        interstitialAd_facebook = new com.facebook.ads.InterstitialAd(ctx, facebook_placement_id);
         interstitialAd_facebook.setAdListener(new com.facebook.ads.InterstitialAdListener() {
 
             @Override
