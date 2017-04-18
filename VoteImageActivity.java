@@ -129,32 +129,46 @@ public class VoteImageActivity extends Activity {
         start(url);
     }
 
+    // (sharing app from browser case)
     private void start(String url) {
         //path
         String[] arrUrl = url.split("/");
+        if (arrUrl.length < 2) {
+            webView.js("$('html').removeClass('translucent'); defaultPage()");
+            return;
+        }
         String keyId = arrUrl[arrUrl.length - 1];
         Log.i(logName, "keyId: " + keyId + " from " + url);
 
+        //build url_request
         String url_request = "";
         String params = "";
         String path = "http://" + ctx.getResources().getString(R.string.url_keys) + "/";
-        if ('-' != keyId.charAt(0)) {
-            //public
-            String key = keyId;
-            String countryUrl = "";
-            if (keyId.indexOf('-') > 0) {
-                String[] arr = keyId.split("-");
-                key = arr[1];
-                countryUrl = "~" + arr[0] + "/";
+        if (keyId.contains("-")) {
+            if ('-' != keyId.charAt(0)) {
+                //public
+                String key = keyId;
+                String countryUrl = "";
+                if (keyId.indexOf('-') > 0) {
+                    String[] arr = keyId.split("-");
+                    key = arr[1];
+                    countryUrl = "~" + arr[0] + "/";
+                }
+                url_request = path + "core/get.php";
+                params = "url=public/" + countryUrl + "/" + key;
+            } else {
+                path += "private/";
+                url_request = path + keyId;
             }
-            url_request = path + "core/get.php";
-            params = "url=public/" + countryUrl + "/" + key;
-        } else {
-            path += "private/";
-            url_request = path + keyId;
+
+            requests.new SimpleRequest().execute(url_request, params, null, null); //TODO: WTF???
+
+        } else if (keyId.contains("_")) {
+            //TODO:
+            //parseRequests.selectById(keyId);
         }
 
-        //only share apps screen:
+        //if share apps screen exception:
         if (url.contains("/share")) {
             String[] data = url.split("/share_");
             if (data.length < 2) {
@@ -166,7 +180,7 @@ public class VoteImageActivity extends Activity {
             }
 
             String[] share_url_arr = url.split("://");
-            String share_url = share_url_arr[share_url_arr.length - 1].split("/")[0];
+            String share_url = share_url_arr[share_url_arr.length - 1].split("/")[0]; //define url for sharing (optional)
             Log.i(logName, "share_url: " + share_url);
 
             String js_callback = "screenPoll.key = '" + keyId + "'; var shareDevice = new RequestPollByKeyCallback";
@@ -196,10 +210,16 @@ public class VoteImageActivity extends Activity {
             return;
         }
 
-        //webView.lastUrl = url; //dont get web url!
-//        if (standarApp) {
-        webView.startWebview(arrUrl, url_request, params);
-//        }
+        //lastUrl
+        webView.lastUrl = indexUrl + "?" + keyId; //this is needed to load in assets index.html ???
+        Log.i(logName, "webView.lastUrl = " + webView.lastUrl);
+
+        if (!keyId.isEmpty()) {
+            //prevent when not resume not loading screen
+            webView.js("loading()");
+            translucent = "true";
+            loading = true;
+        }
     }
 
     @Override

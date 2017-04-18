@@ -84,7 +84,7 @@ public class WebviewLayout extends WebView {
 
                 //if only changes hash
                 if (!"".equals(lastUrl) && url.contains(lastUrl) && url.contains("#")) {
-                    runStoredCode(view);
+                    //runStoredCode(view);
                     Log.i(logName, "only hash changed");
                     return;
                 }
@@ -105,7 +105,7 @@ public class WebviewLayout extends WebView {
                     js("$('#premium').remove(); $('body').append($('<div id=\"premium\">').load('~premium/premium.html'))");
                 }
 
-                runStoredCode(view);
+                //runStoredCode(view);
                 Log.i(logName, "url loaded: " + url);
             }
         });
@@ -134,42 +134,41 @@ public class WebviewLayout extends WebView {
         }
     }
 
-    public void startWebview(String[] arrUrl, String url_request, String params) {
-        //if not pathname '/'
-        if (arrUrl.length < 2) {
-            js("$('html').removeClass('translucent'); defaultPage()");
-            return;
-        }
-
-        String keyId = arrUrl[arrUrl.length - 1];
-
-        //key
-        lastUrl = activity.indexUrl + "?" + keyId; //this is needed to load in assets index.html
-        Log.i(logName, "webView.lastUrl = " + lastUrl);
-
-        if (!"".equals(keyId)) {
-            //prevent when not resume not loading screen
-            js("loading()");
-            activity.translucent = "true";
-            activity.loading = true;
-
-//            String[] key_arr = keyId.split("_");
-//            if (key_arr.length == 2) {
-////                TODO: ver como prevenir esto de manera elegante
-////                String table = "preguntas" + key_arr[0];
-////                String key = key_arr[1];
-////                activity.parseRequests.new select().execute(table, null, key, "new RequestPollByKeyCallback");
-//            } else {
-                //activity.requests.new GetData().execute(keyId);
-                activity.requests.new SimpleRequest().execute(url_request, params, null, null);
-//            }
-
-            return;
-        }
-
-        Log.i(logName, "URL NOT FOUND");
-    }
-
+//    public void startWebview(String[] arrUrl, String url_request, String params) {
+//        //if not pathname '/'
+//        if (arrUrl.length < 2) {
+//            js("$('html').removeClass('translucent'); defaultPage()");
+//            return;
+//        }
+//
+//        String keyId = arrUrl[arrUrl.length - 1];
+//
+//        //key
+//        lastUrl = activity.indexUrl + "?" + keyId; //this is needed to load in assets index.html
+//        Log.i(logName, "webView.lastUrl = " + lastUrl);
+//
+//        if (!"".equals(keyId)) {
+//            //prevent when not resume not loading screen
+//            js("loading()");
+//            activity.translucent = "true";
+//            activity.loading = true;
+//
+////            String[] key_arr = keyId.split("_");
+////            if (key_arr.length == 2) {
+//////                TODO: ver como prevenir esto de manera elegante
+//////                String table = "preguntas" + key_arr[0];
+//////                String key = key_arr[1];
+//////                activity.parseRequests.new select().execute(table, null, key, "new RequestPollByKeyCallback");
+////            } else {
+//                //activity.requests.new GetData().execute(keyId);
+//                activity.requests.new SimpleRequest().execute(url_request, params, null, null);
+////            }
+//
+//            return;
+//        }
+//
+//        Log.i(logName, "URL NOT FOUND");
+//    }
     public void js(String text) {
         //dont try catch, let window.onerror js to detect line and file
         String run = "javascript:;" + text;
@@ -201,17 +200,22 @@ public class WebviewLayout extends WebView {
     }
 
     //Layout.java
-    public void runStoredCode(WebView view) {
+    public void runStoredCode(final WebView view) {
         Log.i(logName, "runStoredCode()");
         loadingFinished = true;
-
-        //check finish
-        for (int i = 0; i < code.size(); i++) {
-            Log.i(logName, "LOAD STORED CODE: " + code.get(i));
-            view.loadUrl(code.get(i));
-        }
-        //clean inject code
-        code.clear();
+        
+        post(new Runnable() {
+            @Override
+            public void run() {
+                //check finish
+                for (int i = 0; i < code.size(); i++) {
+                    Log.i(logName, "LOAD STORED CODE: " + code.get(i));
+                    view.loadUrl(code.get(i));
+                }
+                //clean inject code
+                code.clear();
+            }
+        });
     }
 
     private void loadLocalStorage() {

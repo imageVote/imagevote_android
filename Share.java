@@ -52,14 +52,13 @@ public class Share {
         return shareImageJS(sharingImg, sharingKey, sharingUrl);
     }
 
-    public boolean shareImageJS(String img, String key, String url_path) {
-        Log.i(logName, "url = " + url_path + " + " + key + " on shareImageJS()");
+    public boolean shareImageJS(String img, String key, String url_path) {        
         String url;
-        if (!url_path.isEmpty()) {
-            url = url_path + key;
-        } else {
-            url = ctx.getResources().getString(R.string.url) + "/" + key;
+        if (url_path.isEmpty()) {
+            url_path = ctx.getResources().getString(R.string.url) + "/";
         }
+        Log.i(logName, "url = " + url_path + " + " + key + " on shareImageJS()");
+        url = url_path + key;
 
         //remove old files first
         File[] list = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).listFiles();
@@ -72,14 +71,14 @@ public class Share {
         }
 
         if (null != img && !"".equals(img) && !fromIntent) {
-            String filename = "imagevote_" + key + ".jpeg";
             if (false == requestReadExternalStoragePermissions()) {
                 activity.sharing = this;
                 this.sharingImg = img;
+                this.sharingKey = key;
                 this.sharingUrl = url;
                 return false;
             }
-            saveImage(img, filename);
+            saveImage(img);
         }
 
         //INTENT ///////////////////////////////////////////////////////////
@@ -205,7 +204,7 @@ public class Share {
 
     private static String imgSaved;
 
-    private void saveImage(String base64ImageData, String name) {
+    private void saveImage(String base64ImageData) {
 
         //REMOVE OLD CONTENT RESOLVER IMAGES
         ContentResolver contentResolver = ctx.getContentResolver();
@@ -213,8 +212,9 @@ public class Share {
         Uri queryUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
         String[] projection = {MediaStore.Images.Media._ID};
         String selection = MediaStore.Images.Media.DESCRIPTION + " LIKE ?";
-        String[] selectionArgs = new String[]{"imagevote_%"};
-
+        String[] selectionArgs = new String[]{"imageVote.jpeg"};
+        
+        //http://stackoverflow.com/questions/10716642/android-deleting-an-image
         Cursor c = contentResolver.query(queryUri, projection, selection, selectionArgs, null);
         while (c.moveToNext()) {
             long id = c.getLong(c.getColumnIndexOrThrow(MediaStore.Images.Media._ID));
@@ -223,7 +223,8 @@ public class Share {
         }
 
         //SAVE NEW SHARE IMAGE AND CONTENT-RESOLVER MediaStore
-        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + name;
+        String image_name = "imageVote.jpeg";
+        String path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + image_name;
         File file = new File(path);
 
         if (base64ImageData == null) {
@@ -241,7 +242,7 @@ public class Share {
             fos.close();
 
             imgSaved = android.provider.MediaStore.Images.Media.insertImage(
-                    ctx.getContentResolver(), path, name, null);
+                    ctx.getContentResolver(), path, image_name, null);
 
         } catch (Exception e) {
             Log.e(logName, "ERROR IN base64ImageData = " + base64ImageData, e);

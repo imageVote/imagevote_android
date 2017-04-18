@@ -40,6 +40,11 @@ public class WebviewInterface {
     public String isTranslucent() {
         return activity.translucent;
     }
+    
+    @JavascriptInterface
+    public void documentReady() {
+        activity.webView.runStoredCode(activity.webView);
+    }
 
     @JavascriptInterface
     public void newKey() {
@@ -83,7 +88,7 @@ public class WebviewInterface {
             return;
         }
 
-        Log.i(logName, "SAVE. key: " + key + ", publicKey: " + isPublic + ", action: " + action);
+        Log.i(logName, "SAVE. key: " + key + ", publicKey: " + isPublic + ", action: " + action + ", data: " + data);
 
         pollData = new PollData(action, token, key, data, isPublic, country, callback);
         if ("true" == isPublic || "1" == isPublic) { //if is public
@@ -197,7 +202,7 @@ public class WebviewInterface {
 
     @JavascriptInterface
     public void simpleRequest(String url, String params, String callback, String nextLine) {
-        Log.i(logName, "simpleRequest " + url + " " + params + " " + callback);
+        Log.i(logName, "simpleRequest '" + url + "' '" + params + "' '" + callback + "'");
         Requests.SimpleRequest simpleRequest = requests.new SimpleRequest();
         simpleRequest.nextLine = nextLine;
         simpleRequest.execute(url, params, callback, null);
@@ -246,6 +251,9 @@ public class WebviewInterface {
             + "function handler() {"
             + "this.isTranslucent = function() {"
             + "    window.location = 'http://Device:isTranslucent';"
+            + "};"
+            + "this.documentReady = function() {"
+            + "    window.location = 'http://Device:documentReady';"
             + "};"
             + "this.newKey = function() {"
             + "    window.location = 'http://Device:newKey';"

@@ -68,7 +68,7 @@ public class Requests {
         }
 
         params += "&id=" + userId;
-        new SimpleRequest().execute("/update.php", params, callback, "");
+        new SimpleRequest().execute("update.php", params, callback, "");
     }
 
     public class SimpleRequest extends AsyncTask<String, Void, String> {
@@ -118,6 +118,7 @@ public class Requests {
 
         @Override
         protected void onPostExecute(String response) {
+            Log.i(logName, "SimpleRequest.onPostExecute " + response);
             if (null != callback && !"".equals(callback)) {
                 //Log.i(logName, "response: " + response);
                 String js = callback + "('" + response.replace("\\", "\\\\").replace("'", "\\'") + "'); ";

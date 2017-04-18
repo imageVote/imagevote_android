@@ -14,12 +14,12 @@ public class Interstitial {
 
     public Interstitial(Context context) {
         ctx = context;
-        double random = Math.random() * 2;
+        double random = Math.random();
 
         // FACEBOOK: //
         com.facebook.ads.AdSettings.addTestDevice("59a6986df3fd266d667054b7965927ef"); //my Android:
         String facebook_app_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id);
-        if (random >= 1) {
+        if (random > 0.01) {
             facebook_app_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id2);
         }
         interstitialAd_facebook = new com.facebook.ads.InterstitialAd(ctx, facebook_app_id);
@@ -58,7 +58,7 @@ public class Interstitial {
         VoteImageActivity act = (VoteImageActivity) ctx;
         interstitialAd_admob = new com.google.android.gms.ads.InterstitialAd(act);
         String banner_ad_unit_id = ctx.getResources().getString(at.wouldyourather.R.string.banner_ad_unit_id);
-        if (random >= 1) {
+        if (random > 0.01) {
             banner_ad_unit_id = ctx.getResources().getString(at.wouldyourather.R.string.banner_ad_unit_id2);
         }
         interstitialAd_admob.setAdUnitId(banner_ad_unit_id);
@@ -99,7 +99,7 @@ public class Interstitial {
     public void requestNewInterstitial_admob() {
         Log.i(logName, "request ADMOB Interstitial");
         com.google.android.gms.ads.AdRequest adRequest = new com.google.android.gms.ads.AdRequest.Builder()
-                .addTestDevice(com.google.android.gms.ads.AdRequest.DEVICE_ID_EMULATOR)
+//                .addTestDevice(com.google.android.gms.ads.AdRequest.DEVICE_ID_EMULATOR)
                 .build();
         interstitialAd_admob.loadAd(adRequest);
     }
