@@ -145,8 +145,12 @@ public class ParseRequests {
             id = urls[1];
             add = parseInt(urls[2]);
             if (!urls[3].isEmpty()) {
-                is_sub = true;
-                sub = parseInt(urls[3]);
+                try{                    
+                    sub = parseInt(urls[3]);
+                    is_sub = true;
+                }catch(Exception e){
+                    //not valid sub
+                }
             }
             idQ = urls[4];
             callback = urls[5];
