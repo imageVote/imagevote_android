@@ -168,10 +168,20 @@ public class ParseRequests {
         protected String doInBackground(String... urls) {
             table = urls[0];
             id = urls[1];
-            add = parseInt(urls[2]);
+            try {
+                add = parseInt(urls[2]);
+            } catch (Exception e) {
+                //not valid add
+                return null;
+            }
+
             if (!urls[3].isEmpty()) {
-                is_sub = true;
-                sub = parseInt(urls[3]);
+                try {
+                    sub = parseInt(urls[3]);
+                    is_sub = true;
+                } catch (Exception e) {
+                    //not valid sub
+                }
             }
             idQ = urls[4];
             callback = urls[5];
@@ -238,26 +248,31 @@ public class ParseRequests {
 
         @Override
         protected void onPostExecute(String response) {
-            if (null != callback && !"".equals(callback)) {
-
-                try {
-                    JSONObject obj = new JSONObject(response);
-                    obj.put("idQ", idQ);
-                    obj.put("add", add);
-                    response = obj.toString(4);
-
-                    //Log.i(logName, "response: " + response);
-                    String js = callback + "('" + response.replace("\\", "\\\\").replace("'", "\\'") + "'); ";
-                    activity.webView.js(js);
-
-                } catch (JSONException e) {
-                    Log.e(logName, "ERROR " + response, e);
-                    e.printStackTrace();
-                }
-
-            } else {
-                Log.i(logName, "not callback on saveData");
+            if(null == response){
+                Log.i(logName, "ERROR parseRequest update");
+                return;
             }
+            
+            if (null == callback || "".equals(callback)) {
+                Log.i(logName, "not callback on saveData");
+                return;
+            }
+
+            try {
+                JSONObject obj = new JSONObject(response);
+                obj.put("idQ", idQ);
+                obj.put("add", add);
+                response = obj.toString(4);
+
+                //Log.i(logName, "response: " + response);
+                String js = callback + "('" + response.replace("\\", "\\\\").replace("'", "\\'") + "'); ";
+                activity.webView.js(js);
+
+            } catch (JSONException e) {
+                Log.e(logName, "ERROR " + response, e);
+                e.printStackTrace();
+            }
+
         }
     }
 
