@@ -80,8 +80,9 @@ public class VoteImageActivity extends Activity {
         boolean shareRun = null != url && url.contains("/share");
         webView = (WebviewLayout) findViewById(R.id.webview);
         if (shareRun) {
-            Log.i(logName, "shareRun -> webView.setVisibility(View.GONE);");
-            webView.setVisibility(View.GONE);
+//            Log.i(logName, "shareRun -> webView.setVisibility(View.GONE);");
+//            webView.setVisibility(View.GONE);
+            webView.js("$('html').addClass('translucent'); loading('.wrapper', true);");
         }
         webView.start(ctx);
         webView.load();
@@ -140,73 +141,7 @@ public class VoteImageActivity extends Activity {
         String keyId = arrUrl[arrUrl.length - 1];
         Log.i(logName, "keyId: " + keyId + " from " + url);
 
-        //build url_request
-        String url_request = "";
-        String params = "";
-        String path = "http://" + ctx.getResources().getString(R.string.url_keys) + "/";
-        if (keyId.contains("-")) {
-            if ('-' != keyId.charAt(0)) {
-                //public
-                String key = keyId;
-                String countryUrl = "";
-                if (keyId.indexOf('-') > 0) {
-                    String[] arr = keyId.split("-");
-                    key = arr[1];
-                    countryUrl = "~" + arr[0] + "/";
-                }
-                url_request = path + "core/get.php";
-                params = "url=public/" + countryUrl + "/" + key;
-            } else {
-                path += "private/";
-                url_request = path + keyId;
-            }
-
-            requests.new SimpleRequest().execute(url_request, params, null, null); //TODO: WTF???
-
-        } else if (keyId.contains("_")) {
-            //TODO:
-            //parseRequests.selectById(keyId);
-        }
-
-        //if share apps screen exception:
-        if (url.contains("/share")) {
-            String[] data = url.split("/share_");
-            if (data.length < 2) {
-                data = url.split("#_");
-            }
-            String[] extra = new String[0];
-            if (data.length > 1) {
-                extra = data[1].split("/")[0].split("_");
-            }
-
-            String[] share_url_arr = url.split("://");
-            String share_url = share_url_arr[share_url_arr.length - 1].split("/")[0]; //define url for sharing (optional)
-            Log.i(logName, "share_url: " + share_url);
-
-            String js_callback = "screenPoll.key = '" + keyId + "'; var shareDevice = new RequestPollByKeyCallback";
-            String defineVotes = "";
-            for (int i = 0; i < extra.length; i++) {
-                defineVotes += "shareDevice.poll.obj.options[" + i + "][2] = " + extra[i] + "; ";
-            }
-            String js_post_callback = "function(){"
-                    + defineVotes
-                    + "var canvas = document.createElement('canvas'); "
-                    + "canvas.id = 'shareCanvas'; "
-                    + "canvas.display = 'none'; "
-                    + "$('body').append(canvas); "
-                    + "console.log('getCanvasImage: ' + screenPoll.key + ' : ' + JSON.stringify(shareDevice.poll.obj));"
-                    + "getCanvasImage('#shareCanvas', shareDevice.poll.obj, screenPoll.key, 0, '', function(imgData){"
-                    + "  var done = votationEvents_deviceShare(imgData, screenPoll.key, '" + share_url + "'); "
-                    + "  if(false !== done){"
-                    + "    Device.close('JAVA js_post_callback'); "
-                    + "  }"
-                    + "});"
-                    + "}";
-            Log.i(logName, "js_post_callback:" + js_post_callback);
-
-            //activity.requests.new GetData(js_callback).execute(keyId);
-            requests.new SimpleRequest().execute(url_request, params, js_callback, js_post_callback);
-
+        if (keyId.isEmpty()) {
             return;
         }
 
@@ -214,12 +149,105 @@ public class VoteImageActivity extends Activity {
         webView.lastUrl = indexUrl + "?" + keyId; //this is needed to load in assets index.html ???
         Log.i(logName, "webView.lastUrl = " + webView.lastUrl);
 
-        if (!keyId.isEmpty()) {
-            //prevent when not resume not loading screen
-            webView.js("loading()");
-            translucent = "true";
-            loading = true;
+        //prevent when not resume not loading screen
+        webView.js("loading(null, true)"); //true: hidding all
+        translucent = "true";
+        loading = true;
+
+        if (!url.contains("/share")) {
+            //w8 html app loading..
+            return;
         }
+        
+        ///////////////////////////////////////////////////////////////////////
+        // ON SHARE LOAD:
+        
+        //moveTaskToBack(true); //allow web app working
+        
+        String url_request = "";
+        String params = "";
+        String countryUrl = "";
+
+        String[] share_url_arr = url.split("://");
+        String share_url = share_url_arr[share_url_arr.length - 1].split("/")[0]; //define url for sharing (optional)
+        Log.i(logName, "share_url: " + share_url);
+
+        //if direct sharing app:
+        String[] data = url.split("/share_");
+        if (data.length < 2) {
+            data = url.split("#_");
+        }
+        String[] extra = new String[0];
+        if (data.length > 1) {
+            extra = data[1].split("/")[0].split("_");
+        }
+
+        String defineVotes = "";
+        for (int i = 0; i < extra.length; i++) {
+            defineVotes += "obj.options[" + i + "][2] = " + extra[i] + "; ";
+        }
+
+        String path = "http://" + ctx.getResources().getString(R.string.url_keys) + "/";
+
+        String js_post_callback_default = ""
+                + "var canvas = document.createElement('canvas'); "
+                + "canvas.id = 'shareCanvas'; "
+                + "canvas.display = 'none'; "
+                + "$('body').append(canvas); "
+                + "console.log('getCanvasImage: ' + screenPoll.key + ' : ' + JSON.stringify(obj));"
+                + "getCanvasImage('#shareCanvas', obj, screenPoll.key, 0, '', function(imgData){"
+                + "  var done = votationEvents_deviceShare(imgData, screenPoll.key, '" + share_url + "'); "
+                + "  if(false !== done){"
+                + "    Device.close('JAVA js_post_callback'); "
+                + "  }"
+                + "});";
+
+        if (keyId.contains("-")) {
+            if ('-' != keyId.charAt(0)) {
+                //public
+                String[] keyParts = keyId.split("-");
+                String key = keyParts[1];
+                countryUrl = "~" + keyParts[0] + "/";
+
+                url_request = path + "core/get.php";
+                params = "url=public/" + countryUrl + "/" + key;
+
+            } else {
+//                    path += "private/";
+//                    url_request = path + keyId;
+                Log.i(logName, "ERROR: PUBLIC POLL IS NOW DEPRECATED");
+                return;
+            }
+
+            //CALL:
+            String js_callback = "screenPoll.key = '" + keyId + "'; "
+                    + " var shareDevice = new RequestPollByKeyCallback";
+
+            String js_post_callback = "function(){"
+                    + "var obj = shareDevice.poll.obj; " + defineVotes
+                    + js_post_callback_default
+                    + "}";
+            Log.i(logName, "js_post_callback:" + js_post_callback);
+
+            requests.new SimpleRequest().execute(url_request, params, js_callback, js_post_callback);
+
+        } else if (keyId.contains("_")) {
+            //TODO:
+            //parseRequests.selectById(keyId);
+
+            String[] keyParts = keyId.split("_");
+            String table = "preguntas" + keyParts[0];
+            String id = keyParts[1];
+
+            String js_callback = "screenPoll.key = '" + keyId + "'; "
+                    + " window.gameAndroid = new GamePoll('#pollsPage', " + id + ", 'gameAndroid', '" + keyParts[0] + "'); "
+                    + " gameAndroid.requestCallback";
+
+            String js_post_callback = "var obj = gameAndroid.obj; " + js_post_callback_default;
+
+            new ParseRequests(ctx).new select().execute(table, "", id, js_callback, js_post_callback);
+        }
+
     }
 
     @Override
@@ -441,7 +469,9 @@ public class VoteImageActivity extends Activity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            int[] grantResults
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: {

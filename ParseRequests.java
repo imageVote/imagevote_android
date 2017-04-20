@@ -20,6 +20,9 @@ import java.net.URL;
 import java.nio.charset.Charset;
 
 import static java.lang.Integer.parseInt;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.json.JSONArray;
 
 public class ParseRequests {
 
@@ -31,35 +34,34 @@ public class ParseRequests {
         activity = (VoteImageActivity) ctx;
     }
 
-    public void selectById(String key) {
-        String[] parts = key.split("_");
-        String table = "prguntas" + parts[0];
-        String keyId = parts[1];
-        String js_callback = "screenPoll.key = '" + keyId + "'; window.gameAndroid = new GamePoll('#pollsPage', '" + keyId + "' 'gameAndroid', '" + parts[0] + "'); gameAndroid.requestCallback";
-
-        String defineVotes = "";
-//        for (int i = 0; i < extra.length; i++) {
-//            defineVotes += "shareDevice.poll.obj.options[" + i + "][2] = " + extra[i] + "; ";
-//        }
-
-        String js_post_callback = "function(){"
-                + defineVotes
-                + "var canvas = document.createElement('canvas'); "
-                + "canvas.id = 'shareCanvas'; "
-                + "canvas.display = 'none'; "
-                + "$('body').append(canvas); "
-                + "console.log('getCanvasImage: ' + screenPoll.key + ' : ' + JSON.stringify(shareDevice.poll.obj));"
-                + "getCanvasImage('#shareCanvas', shareDevice.poll.obj, screenPoll.key, 0, '', function(imgData){"
-                + "  var done = votationEvents_deviceShare(imgData, screenPoll.key, ''); "
-                + "  if(false !== done){"
-                + "    Device.close('JAVA js_post_callback'); "
-                + "  }"
-                + "});"
-                + "}";
-
-        new select().execute(table, null, keyId, js_callback, js_post_callback);
-    }
-
+//    public void selectById(String key) {
+//        String[] parts = key.split("_");
+//        String table = "prguntas" + parts[0];
+//        String keyId = parts[1];
+//        String js_callback = "screenPoll.key = '" + keyId + "'; window.gameAndroid = new GamePoll('#pollsPage', '" + keyId + "' 'gameAndroid', '" + parts[0] + "'); gameAndroid.requestCallback";
+//
+//        String defineVotes = "";
+////        for (int i = 0; i < extra.length; i++) {
+////            defineVotes += "shareDevice.poll.obj.options[" + i + "][2] = " + extra[i] + "; ";
+////        }
+//
+//        String js_post_callback = "function(){"
+//                + defineVotes
+//                + "var canvas = document.createElement('canvas'); "
+//                + "canvas.id = 'shareCanvas'; "
+//                + "canvas.display = 'none'; "
+//                + "$('body').append(canvas); "
+//                + "console.log('getCanvasImage: ' + screenPoll.key + ' : ' + JSON.stringify(shareDevice.poll.obj));"
+//                + "getCanvasImage('#shareCanvas', shareDevice.poll.obj, screenPoll.key, 0, '', function(imgData){"
+//                + "  var done = votationEvents_deviceShare(imgData, screenPoll.key, ''); "
+//                + "  if(false !== done){"
+//                + "    Device.close('JAVA js_post_callback'); "
+//                + "  }"
+//                + "});"
+//                + "}";
+//
+//        new select().execute(table, null, keyId, js_callback, js_post_callback);
+//    }
     public class select extends AsyncTask<String, Void, String> {
 
         String logName = this.getClass().getName();
@@ -77,7 +79,11 @@ public class ParseRequests {
             lastId = urls[1];
             id = urls[2];
             callback = urls[3];
-//            post_callback = urls[4];
+            if (urls.length > 4) {
+                post_callback = urls[4];
+            }
+
+            Log.i(logName, "ParseRequest in '" + table + "' '" + lastId + "' '" + id + "' '" + callback + "'");
 
             String query = "{\"approved\":1,\"idQ\":{\"$gte\":" + lastId + "}}" + "&order=idQ";
             if (!id.isEmpty()) {
@@ -111,6 +117,11 @@ public class ParseRequests {
 
         @Override
         protected void onPostExecute(String response) {
+            if (null == response) {
+                Log.i(logName, "EMPTY RESPONSE!!");
+                String js = "e_votationRemoved";
+                activity.webView.js("flash(transl('" + js + "'))");
+            }
             if (null != callback && !callback.isEmpty()) {
                 //Log.i(logName, "response: " + response);
                 String txt = response.replace("\\", "\\\\").replace("'", "\\'");
@@ -126,6 +137,20 @@ public class ParseRequests {
         }
     }
 
+//    public String jsonSelect(String data) {
+//        String json = "";
+//        try {
+//            JSONObject obj = new JSONObject(data);
+//            JSONArray results = obj.getJSONArray("results");
+//            JSONObject result = results.getJSONObject(0);
+//            ...
+//
+//        } catch (JSONException ex) {
+//            Logger.getLogger(ParseRequests.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//
+//        return json;
+//    }
     public class update extends AsyncTask<String, Void, String> {
 
         String logName = this.getClass().getName();

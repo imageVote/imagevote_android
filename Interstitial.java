@@ -4,6 +4,8 @@ import android.content.Context;
 import android.util.Log;
 
 import com.facebook.ads.Ad;
+import com.facebook.ads.AdError;
+import com.facebook.ads.InterstitialAdListener;
 
 public class Interstitial {
 
@@ -18,12 +20,13 @@ public class Interstitial {
 
         // FACEBOOK: //
         com.facebook.ads.AdSettings.addTestDevice("59a6986df3fd266d667054b7965927ef"); //my Android:
-        String facebook_app_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id);
+        String facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id);
         if (random > 0.01) {
-            facebook_app_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id2);
+            facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id2);
         }
         interstitialAd_facebook = new com.facebook.ads.InterstitialAd(ctx, facebook_placement_id);
-        interstitialAd_facebook.setAdListener(new com.facebook.ads.InterstitialAdListener() {
+
+        InterstitialAdListener interstitialAdListener = new InterstitialAdListener() {
 
             @Override
             public void onInterstitialDisplayed(Ad ad) {
@@ -36,22 +39,24 @@ public class Interstitial {
             }
 
             @Override
-            public void onError(com.facebook.ads.Ad ad, com.facebook.ads.AdError adError) {
+            public void onError(Ad ad, AdError adError) {
                 Log.i(logName, "interstitialAd_facebook Error: " + adError.getErrorMessage());
                 //if facebook not works try ADMOB
                 requestNewInterstitial_admob();
             }
 
             @Override
-            public void onAdLoaded(com.facebook.ads.Ad ad) {
+            public void onAdLoaded(Ad ad) {
                 //
             }
 
             @Override
-            public void onAdClicked(com.facebook.ads.Ad ad) {
+            public void onAdClicked(Ad ad) {
                 //
             }
-        });
+        };
+        interstitialAd_facebook.setAdListener(interstitialAdListener);
+
         requestNewInterstitial_facebook();
 
         // ADMOB: //

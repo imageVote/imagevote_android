@@ -171,7 +171,7 @@ public class WebviewLayout extends WebView {
 //    }
     public void js(String text) {
         //dont try catch, let window.onerror js to detect line and file
-        String run = "javascript:;" + text;
+        String run = "javascript:;" + text + "; ";
 
         if (!loadingFinished) {
             Log.i(logName, "!loadingFinished");
@@ -238,16 +238,16 @@ public class WebviewLayout extends WebView {
         js("Device.saveLocalStorage(JSON.stringify(localStorage))");
     }
 
-    public void visible() {
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (getVisibility() == View.GONE) {
-                    js("$('html').addClass('translucent')");
-                }
-                setVisibility(View.VISIBLE);
-            }
-        });
-    }
+//    public void visible() {
+//        activity.runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                if (getVisibility() == View.GONE) {
+//                    js("$('html').addClass('translucent')");
+//                }
+//                setVisibility(View.VISIBLE);
+//            }
+//        });
+//    }
 
 }

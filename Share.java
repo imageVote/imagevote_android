@@ -52,13 +52,13 @@ public class Share {
         return shareImageJS(sharingImg, sharingKey, sharingUrl);
     }
 
-    public boolean shareImageJS(String img, String key, String url_path) {        
+    public boolean shareImageJS(String img, String key, String url_path) {
         String url;
         if (url_path.isEmpty()) {
             url_path = ctx.getResources().getString(R.string.url) + "/";
         }
         Log.i(logName, "url = " + url_path + " + " + key + " on shareImageJS()");
-        url = url_path + key;
+        url = url_path.split("/")[0] + "/" + key; //on sharing from web gamePoll needs add slash!
 
         //remove old files first
         File[] list = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).listFiles();
@@ -143,6 +143,9 @@ public class Share {
                 if (packageName.equals(lastTask)) {
                     Intent addIntent = new Intent();
                     addIntent = updateIntent(addIntent, url);
+                    if(null == addIntent){
+                        return false;
+                    }
                     addIntent.setComponent(new ComponentName(packageName, ri.activityInfo.name));
                     LabeledIntent labeled = new LabeledIntent(addIntent, packageName, ri.loadLabel(pm), ri.icon);
                     //add first
@@ -189,7 +192,8 @@ public class Share {
                         + "}, function(){"
                         + "  Device.close('modalBox cancel');"
                         + "})");
-                activity.webView.visible();
+                //activity.webView.visible();
+                activity.webView.js("loaded()");
 
             }
 //            else {
@@ -213,7 +217,7 @@ public class Share {
         String[] projection = {MediaStore.Images.Media._ID};
         String selection = MediaStore.Images.Media.DESCRIPTION + " LIKE ?";
         String[] selectionArgs = new String[]{"imageVote.jpeg"};
-        
+
         //http://stackoverflow.com/questions/10716642/android-deleting-an-image
         Cursor c = contentResolver.query(queryUri, projection, selection, selectionArgs, null);
         while (c.moveToNext()) {
@@ -281,13 +285,14 @@ public class Share {
         sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);//??  
 
         //Uri uri;
-        //try {
-        //    uri = Uri.parse(imgSaved);
-        //} catch (FileNotFoundException ex) {
-        //    Logger.getLogger(logName).log(Level.SEVERE, null, ex);
-        //    return null;
-        //}
-        Uri uri = Uri.parse(imgSaved);
+        Uri uri;
+        try {
+            uri = Uri.parse(imgSaved);
+        } catch (FileNotFoundException e) {
+            Log.e(logName, "image not found ERROR:", e);
+            activity.webView.js("flash(transl('e_imageNotFound'))");
+            return null;
+        }
 
         sendIntent.putExtra(Intent.EXTRA_STREAM, uri);
 
