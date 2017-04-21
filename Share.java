@@ -16,11 +16,11 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import android.content.*;
-import android.view.View;
 import at.wouldyourather.*;
 
 public class Share {
@@ -288,7 +288,7 @@ public class Share {
         Uri uri;
         try {
             uri = Uri.parse(imgSaved);
-        } catch (FileNotFoundException e) {
+        } catch (Exception e) {
             Log.e(logName, "image not found ERROR:", e);
             activity.webView.js("flash(transl('e_imageNotFound'))");
             return null;
