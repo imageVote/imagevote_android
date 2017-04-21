@@ -121,6 +121,7 @@ public class ParseRequests {
                 Log.i(logName, "EMPTY RESPONSE!!");
                 String js = "e_votationRemoved";
                 activity.webView.js("flash(transl('" + js + "'))");
+                return;
             }
             if (null != callback && !callback.isEmpty()) {
                 //Log.i(logName, "response: " + response);
