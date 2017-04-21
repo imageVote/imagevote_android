@@ -143,7 +143,7 @@ public class Share {
                 if (packageName.equals(lastTask)) {
                     Intent addIntent = new Intent();
                     addIntent = updateIntent(addIntent, url);
-                    if(null == addIntent){
+                    if (null == addIntent) {
                         return false;
                     }
                     addIntent.setComponent(new ComponentName(packageName, ri.activityInfo.name));
@@ -278,6 +278,12 @@ public class Share {
     }
 
     public Intent updateIntent(Intent sendIntent, String url) {
+        if (null == imgSaved || "".equals(imgSaved)) {
+            Log.i(logName, "image not found ERROR:");
+            activity.webView.js("flash(transl('e_imageNotFound'))");
+            return null;
+        }
+
         sendIntent.setAction(Intent.ACTION_SEND);
 
         //image
