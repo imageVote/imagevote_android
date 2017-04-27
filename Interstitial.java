@@ -13,6 +13,7 @@ public class Interstitial {
     private com.google.android.gms.ads.InterstitialAd interstitialAd_admob;
     private Context ctx;
     private String logName = this.getClass().getName();
+    private String facebook_placement_id;
 
     public Interstitial(Context context) {
         ctx = context;
@@ -20,10 +21,10 @@ public class Interstitial {
 
         // FACEBOOK: //
         com.facebook.ads.AdSettings.addTestDevice("59a6986df3fd266d667054b7965927ef"); //my Android:
-        String facebook_placement_id = null;
+
 //        facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id);
 //        if (random > 0.5) {
-            facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id2);
+        facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id2);
 //        }
         interstitialAd_facebook = new com.facebook.ads.InterstitialAd(ctx, facebook_placement_id);
 
@@ -105,7 +106,7 @@ public class Interstitial {
     public void requestNewInterstitial_admob() {
         Log.i(logName, "request ADMOB Interstitial");
         com.google.android.gms.ads.AdRequest adRequest = new com.google.android.gms.ads.AdRequest.Builder()
-//                .addTestDevice(com.google.android.gms.ads.AdRequest.DEVICE_ID_EMULATOR)
+                //                .addTestDevice(com.google.android.gms.ads.AdRequest.DEVICE_ID_EMULATOR)
                 .build();
         interstitialAd_admob.loadAd(adRequest);
     }
@@ -114,13 +115,14 @@ public class Interstitial {
     public void loadInterstitialAd() {
         Log.i(logName, "Interstitial.loadInterstitialAd()");
         ((VoteImageActivity) ctx).runOnUiThread(new Runnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
 
-                if (interstitialAd_facebook.isAdLoaded() ) {
-                   interstitialAd_facebook.show();
-                }else if(interstitialAd_admob.isLoaded()){
+                if (interstitialAd_facebook.isAdLoaded()) {
+                    interstitialAd_facebook.show();
+                } else if (interstitialAd_admob.isLoaded()) {
                     interstitialAd_admob.show();
-                }else{
+                } else {
                     Log.i(logName, "something wrong happens, no add was loaded, requesting for facebook for next!");
                     requestNewInterstitial_facebook();
                 }
@@ -129,7 +131,7 @@ public class Interstitial {
         });
     }
 
-    public void onDestroy(){
+    public void onDestroy() {
         if (interstitialAd_facebook != null) {
             interstitialAd_facebook.destroy();
         }
