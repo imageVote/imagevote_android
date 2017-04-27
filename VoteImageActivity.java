@@ -154,16 +154,15 @@ public class VoteImageActivity extends Activity {
         translucent = "true";
         loading = true;
 
+        //path or domain
         if (!url.contains("/share")) {
             //w8 html app loading..
             return;
         }
-        
+
         ///////////////////////////////////////////////////////////////////////
         // ON SHARE LOAD:
-        
         //moveTaskToBack(true); //allow web app working
-        
         String url_request = "";
         String params = "";
         String countryUrl = "";
@@ -178,8 +177,10 @@ public class VoteImageActivity extends Activity {
             data = url.split("#_");
         }
         String[] extra = new String[0];
+        String type = "";
         if (data.length > 1) {
             extra = data[1].split("/")[0].split("_");
+            type = "show";
         }
 
         String defineVotes = "";
@@ -188,35 +189,42 @@ public class VoteImageActivity extends Activity {
         }
 
         String path = "http://" + ctx.getResources().getString(R.string.url_keys) + "/";
-
+        
+        //remove 'share.' if needed
+        String link_url_arr[] = share_url.split("share.");
+        String link_url = link_url_arr[link_url_arr.length - 1];
+        
         String js_post_callback_default = ""
                 + "var canvas = document.createElement('canvas'); "
                 + "canvas.id = 'shareCanvas'; "
                 + "canvas.display = 'none'; "
                 + "$('body').append(canvas); "
-                + "console.log('getCanvasImage: ' + screenPoll.key + ' : ' + JSON.stringify(obj));"
-                + "getCanvasImage('#shareCanvas', obj, screenPoll.key, 0, '', function(imgData){"
-                + "  var done = votationEvents_deviceShare(imgData, screenPoll.key, '" + share_url + "'); "
-                + "  if(false !== done){"
-                + "    Device.close('JAVA js_post_callback'); "
-                + "  }"
-                + "});";
+                //                + "setTimeout(function(){" //w8 all rly ready
+                + "  getCanvasImage('#shareCanvas', obj, screenPoll.key, 0, '" + type + "', function(imgData){"
+                + "    var done = votationEvents_deviceShare(imgData, screenPoll.key, '" + link_url + "'); "
+                + "    if(false !== done){"
+                + "      Device.close('JAVA js_post_callback'); "
+                + "    }"
+                + "  });"
+                //                + "}, 1);"
+                + "";
+        //setTimeout -> allow fonts load!
 
         if (keyId.contains("-")) {
             if ('-' != keyId.charAt(0)) {
-                //public
-                String[] keyParts = keyId.split("-");
-                String key = keyParts[1];
-                countryUrl = "~" + keyParts[0] + "/";
-
-                url_request = path + "core/get.php";
-                params = "url=public/" + countryUrl + "/" + key;
-
-            } else {
-//                    path += "private/";
-//                    url_request = path + keyId;
-                Log.i(logName, "ERROR: PUBLIC POLL IS NOW DEPRECATED");
+                Log.i(logName, "ERROR: PUBLIC POLL IS FOR NOW DEPRECATED");
                 return;
+
+//                //public
+//                String[] keyParts = keyId.split("-");
+//                String key = keyParts[1];
+//                countryUrl = "~" + keyParts[0] + "/";
+//
+//                url_request = path + "core/get.php";
+//                params = "url=public/" + countryUrl + "/" + key;
+            } else {
+                path += "private/";
+                url_request = path + keyId;
             }
 
             //CALL:
@@ -229,7 +237,9 @@ public class VoteImageActivity extends Activity {
                     + "}";
             Log.i(logName, "js_post_callback:" + js_post_callback);
 
-            requests.new SimpleRequest().execute(url_request, params, js_callback, js_post_callback);
+            Requests.SimpleRequest simpleRequest = requests.new SimpleRequest();
+            simpleRequest.nextLine = "\\n"; //add nextLine to js parse!
+            simpleRequest.execute(url_request, params, js_callback, js_post_callback);
 
         } else if (keyId.contains("_")) {
             //TODO:

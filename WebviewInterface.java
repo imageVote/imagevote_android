@@ -202,7 +202,7 @@ public class WebviewInterface {
 
     @JavascriptInterface
     public void simpleRequest(String url, String params, String callback, String nextLine) {
-        Log.i(logName, "simpleRequest '" + url + "' '" + params + "' '" + callback + "'");
+        Log.i(logName, "simpleRequest '" + url + "' '" + params + "' '" + callback + "' '" + nextLine + "'");
         Requests.SimpleRequest simpleRequest = requests.new SimpleRequest();
         simpleRequest.nextLine = nextLine;
         simpleRequest.execute(url, params, callback, null);

@@ -20,10 +20,11 @@ public class Interstitial {
 
         // FACEBOOK: //
         com.facebook.ads.AdSettings.addTestDevice("59a6986df3fd266d667054b7965927ef"); //my Android:
-        String facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id);
-        if (random > 0.01) {
+        String facebook_placement_id = null;
+//        facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id);
+//        if (random > 0.5) {
             facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id2);
-        }
+//        }
         interstitialAd_facebook = new com.facebook.ads.InterstitialAd(ctx, facebook_placement_id);
 
         InterstitialAdListener interstitialAdListener = new InterstitialAdListener() {
@@ -63,7 +64,7 @@ public class Interstitial {
         VoteImageActivity act = (VoteImageActivity) ctx;
         interstitialAd_admob = new com.google.android.gms.ads.InterstitialAd(act);
         String banner_ad_unit_id = ctx.getResources().getString(at.wouldyourather.R.string.banner_ad_unit_id);
-        if (random > 0.01) {
+        if (random > 0.5) {
             banner_ad_unit_id = ctx.getResources().getString(at.wouldyourather.R.string.banner_ad_unit_id2);
         }
         interstitialAd_admob.setAdUnitId(banner_ad_unit_id);

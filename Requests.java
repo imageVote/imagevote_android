@@ -178,6 +178,7 @@ public class Requests {
     }
 
     private String convertStreamToString(InputStream is, String nextLine) throws Exception {
+        Log.i(logName, "convertStreamToString() '" + nextLine + "'");
         //ISO-8859-1 shows good accents, ñ, etc..
         BufferedReader reader = new BufferedReader(new InputStreamReader(is, "ISO-8859-1"));
         StringBuilder sb = new StringBuilder();

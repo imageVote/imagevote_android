@@ -288,7 +288,7 @@ public class Share {
 
         //image
         sendIntent.setType("image/*");//IMAGE
-        sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);//??  
+        sendIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);//??
 
         //Uri uri;
         Uri uri;
