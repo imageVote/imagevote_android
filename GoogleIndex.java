@@ -1,4 +1,4 @@
-package at.imagevote;
+/*package at.imagevote;
 
 import android.content.Context;
 import android.net.Uri;
@@ -47,3 +47,4 @@ public class GoogleIndex {
         mClient.disconnect();
     }
 }
+*/

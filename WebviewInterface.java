@@ -31,7 +31,7 @@ public class WebviewInterface {
 
     public WebviewInterface(VoteImageActivity act) {
         activity = act;
-        ctx = (Context) act;
+        ctx = act;
 
         requests = new Requests(ctx);
     }
@@ -40,7 +40,7 @@ public class WebviewInterface {
     public String isTranslucent() {
         return activity.translucent;
     }
-    
+
     @JavascriptInterface
     public void documentReady() {
         activity.webView.runStoredCode(activity.webView);
@@ -189,12 +189,11 @@ public class WebviewInterface {
         activity.finish();
     }
 
-    @JavascriptInterface
-    public void showStars() {
-        new Stars(ctx, activity.edText);
-        activity.webView.js("localStorage.setItem('stars_done', true)");
-    }
-    
+//    @JavascriptInterface
+//    public void showStars() {
+//        new Stars(ctx, activity.edText);
+//        activity.webView.js("localStorage.setItem('stars_done', true)");
+//    }
     @JavascriptInterface
     public void simpleRequest(String url, String params, String callback) {
         simpleRequest(url, params, callback, "");
@@ -244,6 +243,23 @@ public class WebviewInterface {
     public void parseUpdate(String table, String id, String add, String sub, String idQ, String callback) {
         activity.parseRequests.new update().execute(table, id, add, sub, idQ, callback);
     }
+    
+    //http://stackoverflow.com/questions/10816757/rate-this-app-link-in-google-play-store-app-on-the-phone
+    @JavascriptInterface
+    public void rate() {
+        Uri uri = Uri.parse("market://details?id=" + ctx.getPackageName());
+        Intent goToMarket = new Intent(Intent.ACTION_VIEW, uri);
+        // To count with Play market backstack, After pressing back button, to taken back to our application, we need to add following flags to intent. 
+        goToMarket.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY
+                | Intent.FLAG_ACTIVITY_NEW_DOCUMENT
+                | Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+        try {
+            activity.startActivity(goToMarket);
+        } catch (ActivityNotFoundException e) {
+            activity.startActivity(new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("http://play.google.com/store/apps/details?id=" + ctx.getPackageName())));
+        }
+    }
 
     //
     public String handleGingerbreadStupidity = "javascript:;"
@@ -285,9 +301,9 @@ public class WebviewInterface {
             + "this.close = function(why) {"
             + "    window.location = 'http://Device:close' + why;"
             + "};"
-            + "this.showStars = function() {"
-            + "    window.location = 'http://Device:showStars';"
-            + "};"
+            //            + "this.showStars = function() {"
+            //            + "    window.location = 'http://Device:showStars';"
+            //            + "};"
             + "this.simpleRequest = function(url, params, callback, nextLine) {"
             + "    window.location = 'http://Device:simpleRequest:' + encodeURIComponent(url + _ + params + _ + callback + _ + nextLine);"
             + "};"
@@ -305,6 +321,9 @@ public class WebviewInterface {
             + "};"
             + "this.parseUpdate = function(table, id, add, sub, idQ, callback) {"
             + "    window.location = 'http://Device:parseUpdate:' + encodeURIComponent(table + _ + id + _ + add + _ + sub + _ + idQ + _ + callback);"
+            + "};"
+            + "this.rate = function() {"
+            + "    window.location = 'http://Device:rate';"
             + "};"
             + "}"
             + "var Device = new handler();";

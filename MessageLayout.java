@@ -60,7 +60,7 @@ public class MessageLayout extends EditText implements View.OnFocusChangeListene
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
         Log.i(this.logName, "onEditorAction");
         hideSoftInput();
-        this.setVisibility(this.INVISIBLE);
+        this.setVisibility(INVISIBLE);
 
         //PARSE SERVER:
         String parseId = ctx.getResources().getString(R.string.parse_id);
@@ -83,7 +83,7 @@ public class MessageLayout extends EditText implements View.OnFocusChangeListene
     }
 
     public void showSoftInput() {
-        this.setVisibility(this.VISIBLE);
+        this.setVisibility(VISIBLE);
         this.requestFocus();
         //softkeyboard last
         //http://stackoverflow.com/questions/5520085/android-show-softkeyboard-with-showsoftinput-is-not-working

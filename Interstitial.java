@@ -56,6 +56,7 @@ public class Interstitial {
             public void onAdClicked(Ad ad) {
                 //
             }
+
         };
         interstitialAd_facebook.setAdListener(interstitialAdListener);
 

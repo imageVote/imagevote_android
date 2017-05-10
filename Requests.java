@@ -32,8 +32,8 @@ public class Requests {
 
     public void saveDATA(String action, String data, String token, String key, String isPublic, String country, String callback) {
         String params = "";
-        params += "action=" + action;
-        params += "&value=" + data;
+//        params += "action=" + action;
+        params += "&data=" + data;
         if (!key.isEmpty()) {
             params += "&key=" + key;
         }
@@ -67,8 +67,12 @@ public class Requests {
             params += "&ISO=" + ISO;
         }
 
-        params += "&id=" + userId;
-        new SimpleRequest().execute("update.php", params, callback, "");
+        params += "&userId=" + userId;
+        if ("create".equals(action)) {
+            new SimpleRequest().execute("create.php", params, callback, "");
+        } else if ("update".equals(action)) {
+            new SimpleRequest().execute("add.php", params, callback, "");
+        }
     }
 
     public class SimpleRequest extends AsyncTask<String, Void, String> {

@@ -266,7 +266,7 @@ public class ParseRequests {
                 response = obj.toString(4);
 
                 //Log.i(logName, "response: " + response);
-                String js = callback + "('" + response.replace("\\", "\\\\").replace("'", "\\'") + "'); ";
+                String js = callback + "('" + response.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "") + "'); ";
                 activity.webView.js(js);
 
             } catch (JSONException e) {

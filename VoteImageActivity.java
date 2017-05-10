@@ -9,8 +9,8 @@ import android.net.*;
 import android.os.*;
 import android.provider.*;
 import android.util.*;
-import android.view.View;
 import android.webkit.*;
+//import com.vungle.sdk.VunglePub;
 
 import at.wouldyourather.*;
 
@@ -49,7 +49,7 @@ public class VoteImageActivity extends Activity {
     public Digits digits;
     public Users users;
     public ParseRequests parseRequests;
-    public GoogleIndex googleIndex;
+    //public GoogleIndex googleIndex;
     public Interstitial interstitial;
 
     //public HashMap<String, String> dataKeys = new HashMap<>();
@@ -71,7 +71,7 @@ public class VoteImageActivity extends Activity {
         digits = new Digits(ctx);
         users = new Users(ctx);
         parseRequests = new ParseRequests(ctx);
-        googleIndex = new GoogleIndex(ctx);
+        //googleIndex = new GoogleIndex(ctx);
 
         //setContentView after start() -> let show translucent mode
         Log.i(logName, "setContentView(R.layout.main); " + url);
@@ -128,6 +128,9 @@ public class VoteImageActivity extends Activity {
 
         ///////////////////////////////////////////////////////////////////////
         start(url);
+        
+        //Jesus analitics (instalaciones en tiempo real)
+        //VunglePub.init(this, "5904ae51a9d9347666002279");
     }
 
     // (sharing app from browser case)
@@ -263,13 +266,13 @@ public class VoteImageActivity extends Activity {
     @Override
     public void onStart() {
         super.onStart();
-        googleIndex.start();
+        //googleIndex.start();
     }
 
     @Override
     public void onStop() {
         webView.saveLocalStorage();
-        googleIndex.stop();
+        //googleIndex.stop();
         super.onStop();
     }
 
