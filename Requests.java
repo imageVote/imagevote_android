@@ -146,7 +146,7 @@ public class Requests {
     }
 
     public String postRequest(String url_string, String params, String nextLine) {
-        String result = "postRequest java error on: " + url_string + " with: " + params;
+        String result = "postRequest android error on: " + url_string + " with: " + params;
 
         try {
             /*HttpPost httppost = new HttpPost("http://" + url_core + "/update.php");
@@ -175,7 +175,7 @@ public class Requests {
 
         } catch (Exception e) {
             String logName = this.getClass().getName();
-            Log.e(logName, e.getMessage());
+            Log.e(logName, "postRequest error", e);
         }
 
         return result;

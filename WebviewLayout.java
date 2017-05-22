@@ -134,41 +134,6 @@ public class WebviewLayout extends WebView {
         }
     }
 
-//    public void startWebview(String[] arrUrl, String url_request, String params) {
-//        //if not pathname '/'
-//        if (arrUrl.length < 2) {
-//            js("$('html').removeClass('translucent'); defaultPage()");
-//            return;
-//        }
-//
-//        String keyId = arrUrl[arrUrl.length - 1];
-//
-//        //key
-//        lastUrl = activity.indexUrl + "?" + keyId; //this is needed to load in assets index.html
-//        Log.i(logName, "webView.lastUrl = " + lastUrl);
-//
-//        if (!"".equals(keyId)) {
-//            //prevent when not resume not loading screen
-//            js("loading()");
-//            activity.translucent = "true";
-//            activity.loading = true;
-//
-////            String[] key_arr = keyId.split("_");
-////            if (key_arr.length == 2) {
-//////                TODO: ver como prevenir esto de manera elegante
-//////                String table = "preguntas" + key_arr[0];
-//////                String key = key_arr[1];
-//////                activity.parseRequests.new select().execute(table, null, key, "new RequestPollByKeyCallback");
-////            } else {
-//                //activity.requests.new GetData().execute(keyId);
-//                activity.requests.new SimpleRequest().execute(url_request, params, null, null);
-////            }
-//
-//            return;
-//        }
-//
-//        Log.i(logName, "URL NOT FOUND");
-//    }
     public void js(String text) {
         //dont try catch, let window.onerror js to detect line and file
         String run = "javascript:;" + text + "; ";

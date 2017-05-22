@@ -20,7 +20,7 @@ public class Interstitial {
         double random = Math.random();
 
         // FACEBOOK: //
-        com.facebook.ads.AdSettings.addTestDevice("59a6986df3fd266d667054b7965927ef"); //my Android:
+//        com.facebook.ads.AdSettings.addTestDevice("59a6986df3fd266d667054b7965927ef"); //my Android:
 
 //        facebook_placement_id = ctx.getResources().getString(at.wouldyourather.R.string.facebook_placement_id);
 //        if (random > 0.5) {

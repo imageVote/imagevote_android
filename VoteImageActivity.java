@@ -80,9 +80,9 @@ public class VoteImageActivity extends Activity {
         boolean shareRun = null != url && url.contains("/share");
         webView = (WebviewLayout) findViewById(R.id.webview);
         if (shareRun) {
-//            Log.i(logName, "shareRun -> webView.setVisibility(View.GONE);");
-//            webView.setVisibility(View.GONE);
-            webView.js("$('html').addClass('translucent'); loading('.wrapper', true);");
+//            webView.js("$('html').addClass('translucent'); loading('.wrapper', true);");
+//        loading = true;
+            webView.js("$('html').addClass('translucent')");
         }
         webView.start(ctx);
         webView.load();
@@ -123,14 +123,12 @@ public class VoteImageActivity extends Activity {
 
         Log.i(logName, "url = " + url);
         if (null == url) {
+            webView.loadUrl(indexUrl);
             return;
         }
 
         ///////////////////////////////////////////////////////////////////////
         start(url);
-        
-        //Jesus analitics (instalaciones en tiempo real)
-        //VunglePub.init(this, "5904ae51a9d9347666002279");
     }
 
     // (sharing app from browser case)
@@ -140,7 +138,10 @@ public class VoteImageActivity extends Activity {
         if (arrUrl.length < 2) {
             webView.js("$('html').removeClass('translucent'); defaultPage()");
             return;
+        } else {
+            webView.js("$('html').addClass('translucent')"); //and allow js do the load work!
         }
+
         String keyId = arrUrl[arrUrl.length - 1];
         Log.i(logName, "keyId: " + keyId + " from " + url);
 
@@ -148,119 +149,121 @@ public class VoteImageActivity extends Activity {
             return;
         }
 
-        //lastUrl
-        webView.lastUrl = indexUrl + "?" + keyId; //this is needed to load in assets index.html ???
-        Log.i(logName, "webView.lastUrl = " + webView.lastUrl);
+        String[] data = url.split("#_"); //sharing hack url case!
+        if (data.length < 2) {
+            data = url.split("/share");
+        }
 
-        //prevent when not resume not loading screen
-        webView.js("loading(null, true)"); //true: hidding all
-        translucent = "true";
-        loading = true;
-
-        //path or domain
-        if (!url.contains("/share")) {
-            //w8 html app loading..
+        if (data.length < 2) {
+            webView.loadUrl(indexUrl + "?key=" + keyId);
             return;
         }
 
-        ///////////////////////////////////////////////////////////////////////
-        // ON SHARE LOAD:
-        //moveTaskToBack(true); //allow web app working
-        String url_request = "";
-        String params = "";
-        String countryUrl = "";
+        isSharing = true; //prevent resume url overwrite
+        //String extra = data[1].split("/")[0].split("_");
+        String extra = data[1].split("/")[0];
+        webView.loadUrl(indexUrl + "?share=" + extra + "&key=" + keyId);
 
-        String[] share_url_arr = url.split("://");
-        String share_url = share_url_arr[share_url_arr.length - 1].split("/")[0]; //define url for sharing (optional)
-        Log.i(logName, "share_url: " + share_url);
-
-        //if direct sharing app:
-        String[] data = url.split("/share_");
-        if (data.length < 2) {
-            data = url.split("#_");
-        }
-        String[] extra = new String[0];
-        String type = "";
-        if (data.length > 1) {
-            extra = data[1].split("/")[0].split("_");
-            type = "show";
-        }
-
-        String defineVotes = "";
-        for (int i = 0; i < extra.length; i++) {
-            defineVotes += "obj.options[" + i + "][2] = " + extra[i] + "; ";
-        }
-
-        String path = "http://" + ctx.getResources().getString(R.string.url_keys) + "/";
-        
-        //remove 'share.' if needed
-        String link_url_arr[] = share_url.split("share.");
-        String link_url = link_url_arr[link_url_arr.length - 1];
-        
-        String js_post_callback_default = ""
-                + "var canvas = document.createElement('canvas'); "
-                + "canvas.id = 'shareCanvas'; "
-                + "canvas.display = 'none'; "
-                + "$('body').append(canvas); "
-                //                + "setTimeout(function(){" //w8 all rly ready
-                + "  getCanvasImage('#shareCanvas', obj, screenPoll.key, 0, '" + type + "', function(imgData){"
-                + "    var done = votationEvents_deviceShare(imgData, screenPoll.key, '" + link_url + "'); "
-                + "    if(false !== done){"
-                + "      Device.close('JAVA js_post_callback'); "
-                + "    }"
-                + "  });"
-                //                + "}, 1);"
-                + "";
-        //setTimeout -> allow fonts load!
-
-        if (keyId.contains("-")) {
-            if ('-' != keyId.charAt(0)) {
-                Log.i(logName, "ERROR: PUBLIC POLL IS FOR NOW DEPRECATED");
-                return;
-
-//                //public
-//                String[] keyParts = keyId.split("-");
-//                String key = keyParts[1];
-//                countryUrl = "~" + keyParts[0] + "/";
+//        //prevent when not resume not loading screen
+////        webView.js("loading(null, true)"); //true: hidding all
+////        translucent = "true";
 //
-//                url_request = path + "core/get.php";
-//                params = "url=public/" + countryUrl + "/" + key;
-            } else {
-                path += "private/";
-                url_request = path + keyId;
-            }
-
-            //CALL:
-            String js_callback = "screenPoll.key = '" + keyId + "'; "
-                    + " var shareDevice = new RequestPollByKeyCallback";
-
-            String js_post_callback = "function(){"
-                    + "var obj = shareDevice.poll.obj; " + defineVotes
-                    + js_post_callback_default
-                    + "}";
-            Log.i(logName, "js_post_callback:" + js_post_callback);
-
-            Requests.SimpleRequest simpleRequest = requests.new SimpleRequest();
-            simpleRequest.nextLine = "\\n"; //add nextLine to js parse!
-            simpleRequest.execute(url_request, params, js_callback, js_post_callback);
-
-        } else if (keyId.contains("_")) {
-            //TODO:
-            //parseRequests.selectById(keyId);
-
-            String[] keyParts = keyId.split("_");
-            String table = "preguntas" + keyParts[0];
-            String id = keyParts[1];
-
-            String js_callback = "screenPoll.key = '" + keyId + "'; "
-                    + " window.gameAndroid = new GamePoll('#pollsPage', " + id + ", 'gameAndroid', '" + keyParts[0] + "'); "
-                    + " gameAndroid.requestCallback";
-
-            String js_post_callback = "var obj = gameAndroid.obj; " + js_post_callback_default;
-
-            new ParseRequests(ctx).new select().execute(table, "", id, js_callback, js_post_callback);
-        }
-
+//        ///////////////////////////////////////////////////////////////////////
+//        // ON SHARE LOAD:
+//        //moveTaskToBack(true); //allow web app working
+//        String url_request = "";
+//        String params = "";
+//
+//        String[] share_url_arr = url.split("://");
+//        String share_url = share_url_arr[share_url_arr.length - 1].split("/")[0]; //define url for sharing (optional)
+//        Log.i(logName, "share_url: " + share_url);
+//
+//        //if direct sharing app:
+//        String[] data = url.split("/share_");
+//        if (data.length < 2) {
+//            data = url.split("#_");
+//        }
+//        String[] extra = new String[0];
+//        String type = "";
+//        if (data.length > 1) {
+//            extra = data[1].split("/")[0].split("_");
+//            type = "show";
+//        }
+//
+//        String defineVotes = "";
+//        for (int i = 0; i < extra.length; i++) {
+//            defineVotes += "obj.options[" + i + "][2] = " + extra[i] + "; ";
+//        }
+//
+//        String path = "http://" + ctx.getResources().getString(R.string.url_keys) + "/";
+//        
+//        //remove 'share.' if needed
+//        String link_url_arr[] = share_url.split("share.");
+//        String link_url = link_url_arr[link_url_arr.length - 1];
+//        
+//        String js_post_callback_default = ""
+//                + "var canvas = document.createElement('canvas'); "
+//                + "canvas.id = 'shareCanvas'; "
+//                + "canvas.display = 'none'; "
+//                + "$('body').append(canvas); "
+//                //                + "setTimeout(function(){" //w8 all rly ready
+//                + "  getCanvasImage('#shareCanvas', obj, screenPoll.key, 0, '" + type + "', function(imgData){"
+//                + "    var done = votationEvents_deviceShare(imgData, screenPoll.key, '" + link_url + "'); "
+//                + "    if(false !== done){"
+//                + "      Device.close('JAVA js_post_callback'); "
+//                + "    }"
+//                + "  });"
+//                //                + "}, 1);"
+//                + "";
+//        //setTimeout -> allow fonts load!
+//
+//        if (keyId.contains("-")) {
+//            if ('-' != keyId.charAt(0)) {
+//                Log.i(logName, "ERROR: PUBLIC POLL IS FOR NOW DEPRECATED");
+//                return;
+//
+////                //public
+////                String[] keyParts = keyId.split("-");
+////                String key = keyParts[1];
+////                String countryUrl = "~" + keyParts[0] + "/";
+////
+////                url_request = path + "core/get.php";
+////                params = "url=public/" + countryUrl + "/" + key;
+//            } else {
+//                path += "private/";
+//                url_request = path + keyId;
+//            }
+//
+//            //CALL:
+//            String js_callback = "screenPoll.key = '" + keyId + "'; "
+//                    + " var shareDevice = new RequestPollByKeyCallback";
+//
+//            String js_post_callback = "function(){"
+//                    + "var obj = shareDevice.poll.obj; " + defineVotes
+//                    + js_post_callback_default
+//                    + "}";
+//            Log.i(logName, "js_post_callback:" + js_post_callback);
+//
+//            Requests.SimpleRequest simpleRequest = requests.new SimpleRequest();
+//            simpleRequest.nextLine = "\\n"; //add nextLine to js parse!
+//            simpleRequest.execute(url_request, params, js_callback, js_post_callback);
+//
+//        } else if (keyId.contains("_")) {
+//            //TODO:
+//            //parseRequests.selectById(keyId);
+//
+//            String[] keyParts = keyId.split("_");
+//            String table = "preguntas" + keyParts[0];
+//            String id = keyParts[1];
+//
+//            String js_callback = "screenPoll.key = '" + keyId + "'; "
+//                    + " window.gameAndroid = new GamePoll('#pollsPage', " + id + ", 'gameAndroid', '" + keyParts[0] + "'); "
+//                    + " gameAndroid.requestCallback";
+//
+//            String js_post_callback = "var obj = gameAndroid.obj; " + js_post_callback_default;
+//
+//            new ParseRequests(ctx).new select().execute(table, "", id, js_callback, js_post_callback);
+//        }
     }
 
     @Override
@@ -364,11 +367,10 @@ public class VoteImageActivity extends Activity {
             }
 
         } else if (!isActivityRestarting && !isSharing && !isPublicActivation) {
-            //open new votations
-            Log.i(logName, "!isActivityRestarting");
-            webView.loadWebviewUrl(indexUrl);
-
-        } else {
+//            //open new votations
+//            Log.i(logName, "!isActivityRestarting");
+//            webView.loadWebviewUrl(indexUrl);
+//        } else {
             Log.i(logName, "resume()");
             //go back or return to votation
             webView.js("hashManager.resume()");
