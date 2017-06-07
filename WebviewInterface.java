@@ -188,12 +188,6 @@ public class WebviewInterface {
         Log.i(logName, "finish in close() JavascriptInterface: " + why);
         activity.finish();
     }
-
-    @JavascriptInterface
-    public void showStars() {
-        new Stars(ctx, activity.edText);
-        activity.webView.js("localStorage.setItem('stars_done', true)");
-    }
     
     @JavascriptInterface
     public void simpleRequest(String url, String params, String callback) {
@@ -284,9 +278,6 @@ public class WebviewInterface {
             + "};"
             + "this.close = function(why) {"
             + "    window.location = 'http://Device:close' + why;"
-            + "};"
-            + "this.showStars = function() {"
-            + "    window.location = 'http://Device:showStars';"
             + "};"
             + "this.simpleRequest = function(url, params, callback, nextLine) {"
             + "    window.location = 'http://Device:simpleRequest:' + encodeURIComponent(url + _ + params + _ + callback + _ + nextLine);"

@@ -188,7 +188,8 @@ public class VoteImageActivity extends Activity {
             defineVotes += "obj.options[" + i + "][2] = " + extra[i] + "; ";
         }
 
-        String path = "http://" + ctx.getResources().getString(R.string.url_keys) + "/";
+        //String path = "http://" + ctx.getResources().getString(R.string.url_keys) + "/";
+        String path = "testing..";
         
         //remove 'share.' if needed
         String link_url_arr[] = share_url.split("share.");

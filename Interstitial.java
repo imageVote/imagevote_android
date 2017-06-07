@@ -98,7 +98,7 @@ public class Interstitial {
                 }
             });
 
-        } catch (Expetion e) {
+        } catch (Exception e) {
             Log.e(logName, "Interstitial error", e);
         }
     }
@@ -141,7 +141,7 @@ public class Interstitial {
                         Log.i(logName, "something wrong happens, no add was loaded, requesting for facebook for next!");
                         requestNewInterstitial_facebook();
                     }
-                } catch (Excpetion e) {
+                } catch (Exception e) {
                     Log.e(logName, "loadInterstitialAd error", e);
                 }
             }
