@@ -121,8 +121,12 @@ public class WebviewLayout extends WebView {
 
         //to load vote.html. lower versions are enabled by default
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            webSettings.setAllowFileAccessFromFileURLs(true);
-            webSettings.setAllowUniversalAccessFromFileURLs(true);
+            try{
+                webSettings.setAllowFileAccessFromFileURLs(true);
+                webSettings.setAllowUniversalAccessFromFileURLs(true);
+            }catch(Exception $e){
+                //do nothing if 'Build.VERSION' not correctly defined
+            }
         }
 
         webSettings.setAllowFileAccess(true);

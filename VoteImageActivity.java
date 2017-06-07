@@ -35,7 +35,7 @@ public class VoteImageActivity extends Activity {
     public WebView custom = null;
     public int customBackgroundColor = 0x11FFFFFF;
     private final String assetsUrl = "file:///android_asset/";
-    public final String indexUrl = assetsUrl + "index.html";
+    public String indexUrl = assetsUrl + "index.html";
 
     public MessageLayout edText;
 
@@ -127,6 +127,10 @@ public class VoteImageActivity extends Activity {
         }
 
         ///////////////////////////////////////////////////////////////////////
+        //UNSOLVED DEPRECATED 4.0.3 BUG :(
+        if(Build.VERSION.SDK_INT == Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1){
+            indexUrl = "http://wouldyourather.co";
+        }
         start(url);
     }
 
