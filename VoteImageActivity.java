@@ -118,7 +118,7 @@ public class VoteImageActivity extends Activity {
                     new ComponentName(packageName, packageName + ".FreeActivity"),
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
         }
-
+        
         interstitial = new Interstitial(ctx);
 
         Log.i(logName, "url = " + url);
