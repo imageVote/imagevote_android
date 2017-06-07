@@ -120,7 +120,7 @@ public class Interstitial {
                     .build();
             interstitialAd_admob.loadAd(adRequest);
 
-            interstitialAd_facebook.loadAd();
+            //interstitialAd_facebook.loadAd();
         } catch (Exception e) {
             Log.e(logName, "requestNewInterstitial_admob error", e);
         }
